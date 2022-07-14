@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:receiptcamp/route_generator.dart';
+import 'package:receiptcamp/pages/route_generator.dart';
 
-import 'lib/widgets/home/navdrawer.dart';
-import 'lib/widgets/home/navbar.dart';
-import 'lib/widgets/home/recentlyviewed.dart';
+import '../lib/widgets/home/navdrawer.dart';
+import '../lib/widgets/home/navbar.dart';
+import '../lib/widgets/home/recentlyviewed.dart';
 import 'route_generator.dart';
 
 void main() {

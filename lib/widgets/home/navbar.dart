@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:receiptcamp/route_generator.dart';
-import 'package:receiptcamp/receipt_explorer_page.dart';
+import 'package:receiptcamp/pages/route_generator.dart';
+import 'package:receiptcamp/pages/receipt_explorer_page.dart';
 
 class BottomNavBar extends StatelessWidget {
   @override

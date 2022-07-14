@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:receiptcamp/lib/widgets/home/navdrawer.dart';
-import 'package:receiptcamp/route_generator.dart';
+import 'package:receiptcamp/pages/route_generator.dart';
 
 import 'route_generator.dart';
-import 'lib/widgets/home/navbar.dart';
+import '../lib/widgets/home/navbar.dart';
 
 class ReceiptExplorer extends StatelessWidget {
   @override
