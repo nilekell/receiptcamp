@@ -36,9 +36,9 @@ class MyHomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: const <Widget>[
+              // _RecentlyViewedReceipts() to be implemented here at a later date
               Text("A List of recently viewed receipts")
             ]),
-        // _RecentlyViewedReceipts() to be implemented here at a later date
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
             onPressed: () {
