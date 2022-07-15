@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:receiptcamp/pages/route_generator.dart';
 
-import '../lib/widgets/home/navdrawer.dart';
-import '../lib/widgets/home/navbar.dart';
-import '../lib/widgets/home/recentlyviewed.dart';
+import 'package:receiptcamp/lib/widgets/home/navdrawer.dart';
+import 'package:receiptcamp/lib/widgets/home/navbar.dart';
+import 'package:receiptcamp/lib/widgets/home/recentlyviewed.dart';
+import 'package:receiptcamp/lib/widgets/home/appbar.dart';
 import 'route_generator.dart';
 
 void main() {
@@ -30,8 +31,7 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         drawer: NavDrawer(),
-        appBar: AppBar(
-            backgroundColor: Colors.blue, title: const Text("ReceiptCamp")),
+        appBar: HomeAppBar(),
         body: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,

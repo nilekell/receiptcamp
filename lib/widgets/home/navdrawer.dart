@@ -16,7 +16,7 @@ class NavDrawer extends StatelessWidget {
             leading: const Icon(Icons.verified_user),
             title: const Text('Profile'),
             onTap: () => {Navigator.of(context).pop()},
-            // currently dismisses navbar
+            // currently dismisses nav drawer
           ),
           ListTile(
             leading: const Icon(Icons.settings),
