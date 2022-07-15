@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 import 'main.dart';
 import 'receipt_explorer_page.dart';
+import 'package:receiptcamp/pages/login_page.dart';
 
 class RouteGenerator {
   // static function to generate route
@@ -17,10 +16,12 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => MyHomePage());
       case 'ReceiptExplorer':
         return MaterialPageRoute(builder: (_) => ReceiptExplorer());
+      case 'LoginPage':
+        return MaterialPageRoute(builder: (_) => LoginPage());
       /*
       SYNTAX to vist another page is shown commented here
       case 'AnotherPage':
-      return MaterialPageRoute(builder: (_) => AnotherPage());
+      return MaterialPageRoute(builder: (_) => AnotherPageClassName());
       */
 
       default:

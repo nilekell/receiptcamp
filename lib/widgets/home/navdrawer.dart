@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:receiptcamp/pages/login_page.dart';
 
 class NavDrawer extends StatelessWidget {
   @override
@@ -31,7 +32,7 @@ class NavDrawer extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.exit_to_app),
             title: const Text('Logout'),
-            onTap: () => {Navigator.of(context).pop()},
+            onTap: () => {Navigator.of(context).pushNamed('LoginPage')},
           ),
         ],
       ),
