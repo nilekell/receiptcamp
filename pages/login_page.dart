@@ -1,8 +1,6 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import 'package:receiptcamp/lib/widgets/home/appbar.dart';
-import 'package:receiptcamp/pages/route_generator.dart';
 
 class LoginPage extends StatefulWidget {
   @override

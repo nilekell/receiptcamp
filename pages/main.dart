@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:receiptcamp/pages/home_page.dart';
 import 'package:receiptcamp/pages/route_generator.dart';
 
-import 'package:receiptcamp/lib/widgets/home/navdrawer.dart';
-import 'package:receiptcamp/lib/widgets/home/navbar.dart';
-import 'package:receiptcamp/lib/widgets/home/recentlyviewed.dart';
-import 'package:receiptcamp/lib/widgets/home/appbar.dart';
 import 'route_generator.dart';
 
 void main() {
@@ -24,30 +19,5 @@ class MyApp extends StatelessWidget {
       initialRoute: "/",
       onGenerateRoute: RouteGenerator.generateRoute,
     );
-  }
-}
-
-class MyHomePage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        drawer: NavDrawer(),
-        appBar: HomeAppBar(),
-        body: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const <Widget>[
-              // _RecentlyViewedReceipts() to be implemented here at a later date
-              Text("A List of recently viewed receipts")
-            ]),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              print("Button has been pressed");
-              // Add code to open button module here
-            },
-            backgroundColor: Colors.blue,
-            child: const Icon(Icons.camera_alt)),
-        bottomNavigationBar: BottomNavBar());
   }
 }

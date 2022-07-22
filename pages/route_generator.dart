@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'main.dart';
+import 'home_page.dart';
 import 'receipt_explorer_page.dart';
 import 'package:receiptcamp/pages/login_page.dart';
 
