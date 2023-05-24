@@ -28,7 +28,7 @@ class _HomeState extends State<Home> {
                 body: Center(child: CircularProgressIndicator()));
           default:
             return Scaffold(
-                drawer: NavDrawer(),
+                drawer: const NavDrawer(),
                 appBar: const HomeAppBar(),
                 body: const Placeholder(),
                 floatingActionButtonLocation:

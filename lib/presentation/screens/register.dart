@@ -21,7 +21,6 @@ class _RegisterState extends State<Register> {
 
   @override
   Widget build(BuildContext context) {
-    final authenticationBloc = BlocProvider.of<AuthenticationBloc>(context);
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {
         if (state is AuthenticationFormErrorState) {
@@ -37,7 +36,7 @@ class _RegisterState extends State<Register> {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context)
               .showSnackBar(const SnackBar(
-                content: Text('Failed to login'),
+                content: Text('Failed to register'),
                 duration: Duration(milliseconds: 300),));
         } else if (state is AuthenticationSwitchScreenState) {
           Navigator.of(context).pushReplacementNamed('/login');
@@ -88,9 +87,7 @@ class _RegisterState extends State<Register> {
                     const SizedBox(height: 20),
                     ElevatedButton(
                         onPressed: () {
-                          authenticationBloc.add(
-                              AuthenticationRegisterButtonClickedEvent(
-                                  email: email, password: password));
+                          context.read<AuthenticationBloc>().add(AuthenticationRegisterButtonClickedEvent(email: email, password: password));
                         },
                         child: const Text('Register')),
                     const SizedBox(height: 20),
@@ -100,7 +97,7 @@ class _RegisterState extends State<Register> {
                     ElevatedButton(
                         child: const Text('Login instead'),
                         onPressed: () {
-                          authenticationBloc.add(AuthenticationSwitchScreenButtonClickedEvent());
+                          context.read<AuthenticationBloc>().add(AuthenticationSwitchScreenButtonClickedEvent());
                         }),
                   ],
                 )),

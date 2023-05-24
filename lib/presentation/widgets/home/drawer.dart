@@ -7,7 +7,6 @@ class NavDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authenticationBloc = BlocProvider.of<AuthenticationBloc>(context);
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {
         /*
@@ -37,8 +36,7 @@ class NavDrawer extends StatelessWidget {
                 title: const Text('Logout'),
                 onTap: () {
                   Navigator.of(context).pop();
-                  authenticationBloc
-                      .add(AuthenticationLogoutButtonClickedEvent());
+                  context.read<AuthenticationBloc>().add(AuthenticationLogoutButtonClickedEvent());
                 },
               ),
               // temporary buttons for debugging

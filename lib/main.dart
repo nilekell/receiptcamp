@@ -32,30 +32,14 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class BlocNavigate extends StatefulWidget {
+class BlocNavigate extends StatelessWidget {
   const BlocNavigate({Key? key}) : super(key: key);
-
-  @override
-  State<BlocNavigate> createState() => _BlocNavigateState();
-}
-
-class _BlocNavigateState extends State<BlocNavigate> {
-  late AuthenticationBloc authenticationBloc;
-
-  @override
-  void initState() {
-    super.initState();
-    authenticationBloc = BlocProvider.of<AuthenticationBloc>(context);
-  }
-
 
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
-      bloc: authenticationBloc,
       listener: (context, state) {},
       builder: (context, state) {
-        print(state.runtimeType);
         if (state is AuthenticationSuccessState) {
           return const Home();
         } else {

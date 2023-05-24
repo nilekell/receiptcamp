@@ -22,7 +22,6 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) {
-    final authenticationBloc = BlocProvider.of<AuthenticationBloc>(context);
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {
         if (state is AuthenticationFormErrorState) {
@@ -95,10 +94,7 @@ class _LoginState extends State<Login> {
                         const SizedBox(height: 20),
                         ElevatedButton(
                             onPressed: () {
-                              authenticationBloc.add(AuthenticationLoginButtonClickedEvent(
-                                email: email,
-                                password: password 
-                              ));
+                              context.read<AuthenticationBloc>().add(AuthenticationLoginButtonClickedEvent(email: email, password: password));
                             }, 
                             child: const Text('Login')),
                         const SizedBox(height: 20),
@@ -112,7 +108,7 @@ class _LoginState extends State<Login> {
                         ElevatedButton(
                             child: const Text('Register instead'),
                             onPressed: () {
-                              authenticationBloc.add(AuthenticationSwitchScreenButtonClickedEvent());
+                              context.read<AuthenticationBloc>().add(AuthenticationSwitchScreenButtonClickedEvent());
                             })
                       ],
                     )),
