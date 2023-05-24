@@ -17,9 +17,10 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {
-        if (state is AuthenticationLogoutSuccessState) {
+        /*if (state is AuthenticationLogoutSuccessState) {
           Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
         }
+        */
       },
       builder: (context, state) {
         switch (state.runtimeType) {
