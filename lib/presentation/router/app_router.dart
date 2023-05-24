@@ -13,7 +13,7 @@ class AppRouter {
         );
       case '/register':
         return MaterialPageRoute(
-          builder: (_) => Register()
+          builder: (_) => const Register()
         );
       case '/login':
         return MaterialPageRoute(
