@@ -21,6 +21,19 @@ class AuthenticationRegisterButtonClickedEvent extends AuthenticationEvent {
 
 }
 
+
+class AuthenticationInitialEmailVerificationEvent extends AuthenticationEvent {}
+
+class AuthenticationCheckEmailVerificationStatusEvent extends AuthenticationEvent {}
+
+class AuthenticationTimerExpiredEvent extends AuthenticationEvent {}
+
+class AuthenticationRegistrationSuccessedEvent extends AuthenticationEvent {}
+
+class AuthenticationRegistrationCancelledEvent extends AuthenticationEvent {}
+
+class AuthenticationDeleteAccountEvent extends AuthenticationEvent {}
+
 class AuthenticationLogoutButtonClickedEvent extends AuthenticationEvent {}
 
 class AuthenticationSwitchScreenButtonClickedEvent extends AuthenticationEvent {}

@@ -53,7 +53,7 @@ class _LoginState extends State<Login> {
               appBar: AppBar(
                 automaticallyImplyLeading: false,
                 backgroundColor: Colors.blue,
-                title: const Text('Sign in'),
+                title: const Text('Login'),
               ),
               body: Container(
                 padding:

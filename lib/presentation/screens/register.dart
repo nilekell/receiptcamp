@@ -30,8 +30,9 @@ class _RegisterState extends State<Register> {
               .showSnackBar(const SnackBar(
                 content: Text('Please check your email and/or password'),
                 duration: Duration(milliseconds: 300),));
-        } else if (state is AuthenticationSuccessState) {
-          Navigator.of(context).pushNamed('/');
+        } else if (state is AuthenticationNavigateToEmailVerificationState) {
+          Navigator.of(context).pushNamed('/verify');
+          print('Navigating to EmailVerification');
         } else if (state is AuthenticationFailureState) {
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context)

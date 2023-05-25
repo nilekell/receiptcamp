@@ -16,6 +16,10 @@ class AuthService {
     );
   }
 
+  Future refreshCurrentUser() async {
+    await auth.currentUser?.reload();
+  }
+
   Stream<AppUser> retrieveCurrentUser() {
     // listening to when a user signs in/out
     // mapping firebase User to AppUser
@@ -69,6 +73,7 @@ class AuthService {
     
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null && !user.emailVerified) {
+      print('sendVerificationEmail()');
       return await user.sendEmailVerification();
     }
   }

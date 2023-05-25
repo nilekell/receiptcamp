@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:receiptcamp/logic/blocs/auth/authentication_bloc.dart';
 import 'package:receiptcamp/presentation/router/app_router.dart';
+import 'package:receiptcamp/presentation/screens/email_verification.dart';
 import 'package:receiptcamp/presentation/screens/home.dart';
 import 'package:receiptcamp/presentation/screens/login.dart';
+import 'package:receiptcamp/presentation/screens/register.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,7 +41,18 @@ class BlocNavigate extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
       listener: (context, state) {},
+      buildWhen: (previous, current) {
+        print('previous: ${previous.runtimeType}');
+        print('current: ${current.runtimeType}');
+        return previous != current;
+      },
       builder: (context, state) {
+        if (state is AuthenticationEmailVerificationInProgressState) {
+          return const EmailVerification();
+        }
+        if (state is AuthenticationRegistrationFailedState) {
+          return const Register();
+        }
         if (state is AuthenticationSuccessState) {
           return const Home();
         } else {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:receiptcamp/presentation/screens/email_verification.dart';
 import 'package:receiptcamp/presentation/screens/file_explorer.dart';
 import 'package:receiptcamp/presentation/screens/home.dart';
 import 'package:receiptcamp/presentation/screens/login.dart';
@@ -18,6 +19,10 @@ class AppRouter {
       case '/login':
         return MaterialPageRoute(
           builder: (_) => const Login()
+        );
+      case '/verify':
+        return MaterialPageRoute(
+          builder: (_) => EmailVerification()
         );
       case '/explorer':
         return MaterialPageRoute(

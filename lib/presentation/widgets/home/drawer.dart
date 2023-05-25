@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:receiptcamp/logic/blocs/auth/authentication_bloc.dart';
@@ -8,13 +9,7 @@ class NavDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthenticationBloc, AuthenticationState>(
-      listener: (context, state) {
-        /*
-        if (state is AuthenticationLogoutSuccessState) {
-          Navigator.of(context).pushReplacementNamed('/login');
-        }
-        */
-      },
+      listener: (context, state) {},
       builder: (context, state) {
         return Drawer(
           child: ListView(
@@ -49,6 +44,14 @@ class NavDrawer extends StatelessWidget {
                 leading: const Icon(Icons.print),
                 title: const Text('Print all receipts'),
                 onTap: () {},
+              ),
+              ListTile(
+                leading: const Icon(Icons.delete_forever_rounded),
+                title: const Text('Delete account'),
+                onTap: () {
+                  // implement delete account with bloc, requires sign in before
+                  // deletion can be done
+                },
               )
             ],
           ),

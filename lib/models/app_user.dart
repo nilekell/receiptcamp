@@ -3,11 +3,13 @@
 // https://pub.dev/documentation/firebase_auth/latest/firebase_auth/User-class.html
 
 class AppUser {
-  final String? uid;
+  final String uid;
   final String? email;
+  final bool isVerified;
 
   AppUser({
     required this.uid,
     required this.email,
+    required this.isVerified
   });
 }
