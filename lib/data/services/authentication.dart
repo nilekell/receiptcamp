@@ -11,7 +11,8 @@ class AuthService {
     // ternary operator
     return AppUser(
       uid: user.uid,
-      email: user.email 
+      email: user.email,
+      isVerified: user.emailVerified
     );
   }
 
@@ -20,9 +21,9 @@ class AuthService {
     // mapping firebase User to AppUser
     return auth.authStateChanges().map((User? user) {
       if (user != null) {
-        return AppUser(uid: user.uid, email: user.email);
+        return AppUser(uid: user.uid, email: user.email, isVerified: user.emailVerified);
       } else {
-        return  AppUser(uid: "uid", email: "email");
+        return  AppUser(uid: "uid", email: "email", isVerified: false);
       }
     });
   }
@@ -80,6 +81,16 @@ class AuthService {
       print('Failed to sign out');
       print(e);
 
+    }
+  }
+
+  Future<void> deleteUser() async {
+    try {
+      User user = auth.currentUser!;
+      user.delete();
+      print('deleted accocunt: ${user.email}');
+    } catch(e) {
+      print('Failed to delete user');
     }
   }
 }
