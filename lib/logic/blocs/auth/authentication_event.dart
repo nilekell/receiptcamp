@@ -10,15 +10,14 @@ class AuthenticationLoginButtonClickedEvent extends AuthenticationEvent {
 
   final String email;
   final String password;
-
 }
 
 class AuthenticationRegisterButtonClickedEvent extends AuthenticationEvent {
-  AuthenticationRegisterButtonClickedEvent({required this.email, required this.password});
+  AuthenticationRegisterButtonClickedEvent({required this.email, required this.password, required this.confirmPassword});
 
   final String email;
   final String password;
-
+  final String confirmPassword;
 }
 
 

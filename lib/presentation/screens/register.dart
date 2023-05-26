@@ -17,6 +17,7 @@ class _RegisterState extends State<Register> {
   // TextFormField state
   String email = '';
   String password = '';
+  String confirmPassword = '';
   String error = '';
 
   @override
@@ -86,9 +87,23 @@ class _RegisterState extends State<Register> {
                       ),
                     ),
                     const SizedBox(height: 20),
+                    Container(
+                      width: 250,
+                      child: TextFormField(
+                        decoration:
+                            textInputDecoration.copyWith(hintText: 're-enter password'),
+                        obscureText: true,
+                        onChanged: (value) {
+                          setState(() {
+                            confirmPassword = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     ElevatedButton(
                         onPressed: () {
-                          context.read<AuthenticationBloc>().add(AuthenticationRegisterButtonClickedEvent(email: email, password: password));
+                          context.read<AuthenticationBloc>().add(AuthenticationRegisterButtonClickedEvent(email: email, password: password, confirmPassword: confirmPassword));
                         },
                         child: const Text('Register')),
                     const SizedBox(height: 20),

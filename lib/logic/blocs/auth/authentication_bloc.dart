@@ -41,7 +41,7 @@ class AuthenticationBloc
 
       final currentUser = await _auth.retrieveCurrentUser().first;
       print(currentUser.uid);
-      if (currentUser.uid != "uid" && currentUser.uid != null) {
+      if (currentUser.uid != "uid") {
         print('authenticationSuccessState()');
         emit(AuthenticationSuccessState(user: currentUser));
       } else {
@@ -59,7 +59,7 @@ class AuthenticationBloc
       Emitter<AuthenticationState> emit) async {
     print('authenticationLoginButtonClickedEvent()');
 
-    if (validFormFields(event.email, event.password) == false) {
+    if (validFormFieldsLogin(event.email, event.password) == false) {
       emit(AuthenticationFormErrorState());
       return;
     }
@@ -88,7 +88,7 @@ class AuthenticationBloc
       emit(AuthenticationLoadingState());
 
       await _auth.signOutFunc();
-      emit(AuthenticationLogoutSuccessState());
+      emit(AuthenticationInitialState());
     } catch (e) {
       emit(AuthenticationFailureState(errorMessage: 'Failed to logout'));
     }
@@ -107,7 +107,7 @@ class AuthenticationBloc
     print('authenticationRegisterButtonClickedEvent()');
 
     // checking form for basic user input mistakes
-    if (validFormFields(event.email, event.password) == false) {
+    if (validFormFieldsRegister(event.email, event.password, event.confirmPassword) == false) {
       emit(AuthenticationFormErrorState());
       return;
     }
@@ -214,7 +214,33 @@ class AuthenticationBloc
   }
 }
 
-bool validFormFields(String email, String password) {
+bool validFormFieldsRegister(String email, String password, String confirmPassword) {
+  // validating email address
+  final RegExp emailRegExp = RegExp(
+    r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$',
+  );
+
+  // Check if email is valid
+  if (!emailRegExp.hasMatch(email)) {
+    return false;
+  }
+
+  // checking if passwords match
+  if (password != confirmPassword) {
+    return false;
+  }
+
+  // checking if password is long enough
+  else if (password.length < 6) {
+    return false;
+  } else if (email.isEmpty) {
+    return false;
+  }
+
+  return true;
+}
+
+bool validFormFieldsLogin(String email, String password) {
   // validating email address
   final RegExp emailRegExp = RegExp(
     r'^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$',
