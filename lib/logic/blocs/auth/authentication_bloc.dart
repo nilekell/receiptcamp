@@ -86,9 +86,10 @@ class AuthenticationBloc
     print('authenticationLogoutButtonClickedEvent()');
     try {
       emit(AuthenticationLoadingState());
+      stopEmailVerificationTimers();
 
       await _auth.signOutFunc();
-      emit(AuthenticationInitialState());
+      emit(AuthenticationLogoutSuccessState());
     } catch (e) {
       emit(AuthenticationFailureState(errorMessage: 'Failed to logout'));
     }
@@ -161,17 +162,6 @@ class AuthenticationBloc
         emit(AuthenticationEmailVerificationInProgressState(user: user));
       }
     }
-    /*
-    final currentUser = await _auth.retrieveCurrentUser().first;
-    print({currentUser.email, currentUser.isVerified});
-    if (currentUser.isVerified) {
-      // Email is verified
-      stopEmailVerificationTimers();
-      emit(AuthenticationSuccessState(user: currentUser)); 
-    } else {
-      emit(AuthenticationEmailVerificationInProgressState(user: currentUser));
-    }
-    */
   }
 
   FutureOr<void> authenticationInitialEmailVerificationEvent(

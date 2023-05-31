@@ -47,11 +47,14 @@ class BlocNavigate extends StatelessWidget {
         return previous != current;
       },
       builder: (context, state) {
-        if (state is AuthenticationEmailVerificationInProgressState) {
-          return const EmailVerification();
+        if (state is AuthenticationLogoutSuccessState) {
+          return const Login();
         }
         if (state is AuthenticationRegistrationFailedState) {
           return const Register();
+        }
+        if (state is AuthenticationEmailVerificationInProgressState) {
+          return const EmailVerification();
         }
         if (state is AuthenticationSuccessState) {
           return const Home();
