@@ -8,6 +8,7 @@ import 'package:receiptcamp/models/folder.dart';
 import 'package:receiptcamp/models/receipt.dart';
 import 'package:receiptcamp/presentation/ui/file_explorer/folder/folder_sheet.dart';
 import 'package:receiptcamp/presentation/ui/file_explorer/receipt/receipt_sheet.dart';
+import 'package:receiptcamp/presentation/ui/file_explorer/snackbars/snackbar_utility.dart';
 import 'package:receiptcamp/presentation/ui/file_explorer/upload_sheet.dart';
 
 class FileExplorer extends StatefulWidget {
@@ -40,27 +41,7 @@ class _FileExplorerState extends State<FileExplorer> {
         ],
         child: BlocConsumer<UploadBloc, UploadState>(
           listener: (context, state) {
-            switch (state) {
-              case UploadReceiptSuccess():
-                context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                        'Receipt ${state.receipt.name} added successfully'),
-                    duration: const Duration(milliseconds: 2000)));
-              case UploadFolderSuccess():
-                context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content:
-                        Text('Folder ${state.folder.name} added successfully'),
-                    duration: const Duration(milliseconds: 2000)));
-              case UploadFailed():
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content: Text('Failed to save file object'),
-                    duration: Duration(milliseconds: 900)));
-              default:
-                print('Explorer Screen: ${state.toString()}');
-                return;
-            }
+            SnackBarUtility.showUploadSnackBar(context, state);
           },
           builder: (context, state) {
             return BlocBuilder<ExplorerBloc, ExplorerState>(
@@ -112,89 +93,7 @@ class _FileExplorerState extends State<FileExplorer> {
                                 child: BlocListener<FileEditingCubit,
                                     FileEditingCubitState>(
                                   listener: (context, state) {
-                                    switch (state) {
-                                      case FileEditingCubitRenameSuccess():
-                                        // reloading list to show new changes
-                                        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    '${state.oldName} renamed to ${state.newName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitRenameFailure():
-                                        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Failed to rename ${state.oldName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitMoveSuccess():
-                                        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    '${state.oldName} moved to ${state.newName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitMoveFailure():
-                                        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Failed to move ${state.oldName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitDeleteSuccess():
-                                        context
-                                            .read<ExplorerBloc>()
-                                            .add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Deleted ${state.deletedName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitDeleteFailure():
-                                        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Failed to delete ${state.deletedName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitShareSuccess():
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Shared ${state.receiptName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitShareFailure():
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Failed to share ${state.receiptName}'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitSaveImageSuccess():
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Saved ${state.receiptName} to camera roll'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      case FileEditingCubitSaveImageFailure():
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(SnackBar(
-                                                content: Text(
-                                                    'Failed to save ${state.receiptName} to camera roll'),
-                                                duration: const Duration(
-                                                    milliseconds: 2000)));
-                                      default:
-                                        return;
-                                    }
+                                    SnackBarUtility.showFileEditSnackBar(context, state);
                                   },
                                   child: ListView.builder(
                                     itemCount: state.files.length,
