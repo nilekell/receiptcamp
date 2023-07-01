@@ -17,7 +17,7 @@ final class UploadReceiptSuccess extends UploadState {
   final Receipt receipt;
 
   @override
-  List<Object> get props => [receipt];
+  List<Receipt> get props => [receipt];
 }
 
 final class UploadFolderSuccess extends UploadState {
@@ -26,7 +26,7 @@ final class UploadFolderSuccess extends UploadState {
   final Folder folder;
 
   @override
-  List<Object> get props => [folder];
+  List<Folder> get props => [folder];
 }
 
 final class UploadFailed extends UploadState {}
