@@ -6,9 +6,9 @@ import 'package:receiptcamp/logic/blocs/upload/upload_bloc.dart';
 import 'package:receiptcamp/logic/cubits/file_edit/file_editing_cubit.dart';
 import 'package:receiptcamp/models/folder.dart';
 import 'package:receiptcamp/models/receipt.dart';
-import 'package:receiptcamp/presentation/ui/file_navigator/folder/folder_sheet.dart';
-import 'package:receiptcamp/presentation/ui/file_navigator/receipt/receipt_sheet.dart';
-import 'package:receiptcamp/presentation/ui/file_navigator/upload_sheet.dart';
+import 'package:receiptcamp/presentation/ui/file_explorer/folder/folder_sheet.dart';
+import 'package:receiptcamp/presentation/ui/file_explorer/receipt/receipt_sheet.dart';
+import 'package:receiptcamp/presentation/ui/file_explorer/upload_sheet.dart';
 
 class FileExplorer extends StatefulWidget {
   const FileExplorer({Key? key}) : super(key: key);
