@@ -35,10 +35,10 @@ class FileEditingCubit extends Cubit<FileEditingCubitState> {
     final newFolder = await DatabaseRepository.instance.getFolderById(targetFolderId);
     try {
       await DatabaseRepository.instance.moveReceipt(receipt, targetFolderId);
-      emit(FileEditingCubitMoveSuccess(oldName: receipt.name, newName: newFolder.name));
+      emit(FileEditingCubitMoveSuccess(oldFolderName: receipt.name, newFolderName: newFolder.name));
     } on Exception catch (e) {
       print(e.toString());
-      emit(FileEditingCubitMoveFailure(oldName: receipt.name, newName: newFolder.name));
+      emit(FileEditingCubitMoveFailure(oldFolderName: receipt.name, newFolderName: newFolder.name));
     }
   }
 
@@ -72,10 +72,10 @@ class FileEditingCubit extends Cubit<FileEditingCubitState> {
     final targetFolderName = targetFolder.name;
     try {
       await DatabaseRepository.instance.moveFolder(folder, targetFolderId);
-      emit(FileEditingCubitMoveSuccess(oldName: oldFolder, newName: targetFolderName));
+      emit(FileEditingCubitMoveSuccess(oldFolderName: oldFolder, newFolderName: targetFolderName));
     } on Exception catch (e) {
       print(e.toString());
-      emit(FileEditingCubitMoveFailure(oldName: oldFolder, newName: targetFolderName));
+      emit(FileEditingCubitMoveFailure(oldFolderName: oldFolder, newFolderName: targetFolderName));
     }
   }
 

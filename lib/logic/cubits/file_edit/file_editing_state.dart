@@ -4,7 +4,7 @@ sealed class FileEditingCubitState extends Equatable {
   const FileEditingCubitState();
 
   @override
-  List<Object> get props => [];
+  List<String> get props => [];
 }
 
 final class FileEditingCubitInitial extends FileEditingCubitState {}
@@ -17,7 +17,7 @@ final class FileEditingCubitRenameSuccess extends FileEditingCubitState {
   final String newName;
 
   @override
-  List<Object> get props => [oldName, newName];
+  List<String> get props => [oldName, newName];
 }
 
 final class FileEditingCubitRenameFailure extends FileEditingCubitState {
@@ -27,29 +27,29 @@ final class FileEditingCubitRenameFailure extends FileEditingCubitState {
   const FileEditingCubitRenameFailure({required this.oldName, required this.newName});
 
   @override
-  List<Object> get props => [oldName, newName];
+  List<String> get props => [oldName, newName];
 }
 
 // Moving states
 
 final class FileEditingCubitMoveSuccess extends FileEditingCubitState {
-  const FileEditingCubitMoveSuccess({required this.oldName, required this.newName});
+  const FileEditingCubitMoveSuccess({required this.oldFolderName, required this.newFolderName});
 
-  final String oldName;
-  final String newName;
+  final String oldFolderName;
+  final String newFolderName;
 
   @override
-  List<Object> get props => [oldName, newName];
+  List<String> get props => [oldFolderName, newFolderName];
 }
 
 final class FileEditingCubitMoveFailure extends FileEditingCubitState {
-  const FileEditingCubitMoveFailure({required this.oldName, required this.newName});
+  const FileEditingCubitMoveFailure({required this.oldFolderName, required this.newFolderName});
 
-  final String oldName;
-  final String newName;
+  final String oldFolderName;
+  final String newFolderName;
 
   @override
-  List<Object> get props => [oldName, newName];
+  List<String> get props => [oldFolderName, newFolderName];
 }
 
 // Deleting states
@@ -60,7 +60,7 @@ final class FileEditingCubitDeleteSuccess extends FileEditingCubitState {
   final String deletedName;
 
   @override
-  List<Object> get props => [deletedName];
+  List<String> get props => [deletedName];
 }
 
 final class FileEditingCubitDeleteFailure extends FileEditingCubitState {
@@ -69,7 +69,7 @@ final class FileEditingCubitDeleteFailure extends FileEditingCubitState {
   final String deletedName;
 
   @override
-  List<Object> get props => [deletedName];
+  List<String> get props => [deletedName];
 }
 
 // Sharing states
@@ -80,7 +80,7 @@ final class FileEditingCubitShareSuccess extends FileEditingCubitState {
   final String receiptName;
 
   @override
-  List<Object> get props => [receiptName];
+  List<String> get props => [receiptName];
 }
 
 final class FileEditingCubitShareFailure extends FileEditingCubitState {
@@ -89,7 +89,7 @@ final class FileEditingCubitShareFailure extends FileEditingCubitState {
   final String receiptName;
 
   @override
-  List<Object> get props => [receiptName];
+  List<String> get props => [receiptName];
 }
 
 // Saving states
@@ -100,7 +100,7 @@ final class FileEditingCubitSaveImageSuccess extends FileEditingCubitState {
   final String receiptName;
 
   @override
-  List<Object> get props => [receiptName];
+  List<String> get props => [receiptName];
 }
 
 final class FileEditingCubitSaveImageFailure extends FileEditingCubitState {
@@ -109,5 +109,5 @@ final class FileEditingCubitSaveImageFailure extends FileEditingCubitState {
   final String receiptName;
 
   @override
-  List<Object> get props => [receiptName];
+  List<String> get props => [receiptName];
 }
