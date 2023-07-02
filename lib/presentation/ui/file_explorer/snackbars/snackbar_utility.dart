@@ -17,12 +17,12 @@ abstract interface class SnackBarUtility {
       case UploadFolderSuccess:
         UploadFolderSuccess currentState = state as UploadFolderSuccess;
          _message = '${currentState.folder.name} added successfully';
-         context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
+         context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent(folderId: currentState.folder.id));
           ScaffoldMessenger.of(context).showSnackBar(_appSnackBar);
       case UploadReceiptSuccess:
         UploadReceiptSuccess currentState = state as UploadReceiptSuccess;
         _message = '${currentState.receipt.name} added successfully';
-        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
+        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent(folderId: currentState.receipt.parentId));
         ScaffoldMessenger.of(context).showSnackBar(_appSnackBar);
       case UploadFailed:
         _message = 'Failed to save file object';
@@ -40,7 +40,7 @@ abstract interface class SnackBarUtility {
       case FileEditingCubitRenameSuccess:
         FileEditingCubitRenameSuccess currentState = state as FileEditingCubitRenameSuccess;
         _message = '${currentState.oldName} renamed to ${currentState.newName}';
-        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
+        // context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
         ScaffoldMessenger.of(context).showSnackBar(_appSnackBar);
       case FileEditingCubitRenameFailure:
       FileEditingCubitRenameFailure currentState = state as FileEditingCubitRenameFailure;
@@ -49,7 +49,7 @@ abstract interface class SnackBarUtility {
       case FileEditingCubitMoveSuccess:
       FileEditingCubitMoveSuccess currentState = state as FileEditingCubitMoveSuccess;
         _message = 'Moved ${currentState.oldFolderName} to ${currentState.newFolderName}';
-        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
+        // context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
         ScaffoldMessenger.of(context).showSnackBar(_appSnackBar);
       case FileEditingCubitMoveFailure:
       FileEditingCubitMoveFailure currentState = state as FileEditingCubitMoveFailure;
@@ -58,7 +58,7 @@ abstract interface class SnackBarUtility {
       case FileEditingCubitDeleteSuccess:
       FileEditingCubitDeleteSuccess currentState = state as FileEditingCubitDeleteSuccess;
         _message = 'Deleted ${currentState.deletedName}';
-        context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
+        // context.read<ExplorerBloc>().add(ExplorerFetchFilesEvent());
         ScaffoldMessenger.of(context).showSnackBar(_appSnackBar);
       case FileEditingCubitDeleteFailure:
       FileEditingCubitDeleteFailure currentState = state as FileEditingCubitDeleteFailure;
@@ -80,7 +80,7 @@ abstract interface class SnackBarUtility {
         FileEditingCubitSaveImageFailure currentState = state as FileEditingCubitSaveImageFailure;
         _message = 'Saved ${currentState.receiptName} to camera roll';
       default:
-        print('default state');
+        print('state is ${state.runtimeType.toString()}');
         return;
     }
   }
