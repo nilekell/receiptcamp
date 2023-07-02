@@ -33,4 +33,20 @@ class ExplorerBloc extends Bloc<ExplorerEvent, ExplorerState> {
       emit(ExplorerErrorState());
     }
   }
+
+  FutureOr<void> explorerChangeFolderEvent(ExplorerChangeFolderEvent event, Emitter<ExplorerState> emit) async {
+    emit(ExplorerLoadingState());
+    try {
+      final List<dynamic> files =
+          await DatabaseRepository.instance.getFolderContents(event.nextFolderId);
+      if (files.isNotEmpty) {
+        emit(ExplorerLoadedSuccessState(files: files));
+      } else {
+        emit(ExplorerEmptyFilesState());
+      }
+    } catch (error) {
+      emit(ExplorerErrorState());
+    }
+  }
+
 }
