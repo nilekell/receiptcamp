@@ -27,7 +27,7 @@ class ReceiptService {
 
   // create and return receipt object
   static Future<Receipt> createReceiptFromFile(
-      File receiptFile, String fileName) async {
+      File receiptFile, String fileName, String folderId) async {
     // Generating receipt object properties
 
     final path = receiptFile.path;
@@ -48,7 +48,7 @@ class ReceiptService {
         lastModified: currentTime,
         storageSize: compressedfileSize,
         // id of default folder
-        parentId: 'a1');
+        parentId: folderId);
 
     return thisReceipt;
   }

@@ -12,9 +12,18 @@ sealed class UploadEvent extends Equatable {
 
 final class UploadInitialEvent extends UploadEvent {}
 
-final class UploadTapEvent extends UploadEvent {}
+final class UploadTapEvent extends UploadEvent {
+  final String folderId;
 
-final class CameraTapEvent extends UploadEvent {}
+  const UploadTapEvent({required this.folderId});
+  
+}
+
+final class CameraTapEvent extends UploadEvent {
+  final String folderId;
+
+  const CameraTapEvent({required this.folderId});
+}
 
 final class FolderCreateEvent extends UploadEvent {
   const FolderCreateEvent({required this.name, required this.parentId});

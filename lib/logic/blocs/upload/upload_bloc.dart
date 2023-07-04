@@ -36,7 +36,7 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
         return;
       }
 
-      final results = await processingReceiptAndTags(receiptImage);
+      final results = await processingReceiptAndTags(receiptImage, event.folderId);
       final receipt = results[0];
       final tags = results[1];
 
@@ -64,7 +64,7 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
         return;
       }
 
-      final results = await processingReceiptAndTags(receiptPicture);
+      final results = await processingReceiptAndTags(receiptPicture, event.folderId);
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
 
@@ -103,7 +103,7 @@ class UploadBloc extends Bloc<UploadEvent, UploadState> {
   }
 }
 
-Future<List<dynamic>> processingReceiptAndTags(XFile receiptImage) async {
+Future<List<dynamic>> processingReceiptAndTags(XFile receiptImage, String folderIdToSaveTo) async {
   // tag actions
   final receiptUid = Utility.generateUid();
   final tagsList = await ReceiptService.extractKeywordsAndGenerateTags(
@@ -119,7 +119,7 @@ Future<List<dynamic>> processingReceiptAndTags(XFile receiptImage) async {
 
   // creating receipt object
   final receipt = await ReceiptService.createReceiptFromFile(
-      receiptImageFile!, basename(receiptImageFile.path));
+      receiptImageFile!, basename(receiptImageFile.path), folderIdToSaveTo);
 
   return [receipt, tagsList];
 }

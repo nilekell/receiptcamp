@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:receiptcamp/logic/blocs/upload/upload_bloc.dart';
+import 'package:receiptcamp/models/folder.dart';
 
 Future<void> showCreateFolderDialog(
-    BuildContext context, UploadBloc uploadBloc) async {
+    BuildContext context, UploadBloc uploadBloc,  Folder currentFolder) async {
   return await showDialog(
       context: context,
       builder: (createFolderDialogContext) {
         return BlocProvider.value(
           value: uploadBloc,
-          child: const FolderDialog(),
+          child: FolderDialog(currentFolder: currentFolder),
         );
       });
 }
 
 class FolderDialog extends StatefulWidget {
-  const FolderDialog({super.key});
+  final Folder currentFolder;
+
+  const FolderDialog({super.key,
+  required this.currentFolder});
 
   @override
   State<FolderDialog> createState() => _FolderDialogState();
@@ -70,7 +74,7 @@ class _FolderDialogState extends State<FolderDialog> {
           onPressed: isEnabled
               ? () {
                   context.read<UploadBloc>().add(FolderCreateEvent(
-                      name: textEditingController.value.text, parentId: 'a1'));
+                      name: textEditingController.value.text, parentId: widget.currentFolder.id));
                   // closing folder dialog
                   Navigator.of(context).pop();
                 }
