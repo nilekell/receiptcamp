@@ -50,10 +50,11 @@ class CustomSearchDelegate extends SearchDelegate {
           case SearchStateLoading():
             return const Center(child: CircularProgressIndicator());
           case SearchStateNoQuery():
-            return const Center(child: Text('Start searching for any words on a receipt'));
+            return const Center(
+                child: NoQueryMessage());
           case SearchStateEmpty():
             return const Center(
-                child: Text("Sorry, we couldn't find any results"));
+                child: NoResultsMessage());
           case SearchStateSuccess():
             return Scrollbar(
                 child: ListView.builder(
@@ -87,10 +88,11 @@ class CustomSearchDelegate extends SearchDelegate {
           case SearchStateLoading():
             return const Center(child: CircularProgressIndicator());
           case SearchStateNoQuery():
-            return const Center(child: Text('Start searching for any words on a receipt'));
+            return const Center(
+                child: NoQueryMessage());
           case SearchStateEmpty():
             return const Center(
-                child: Text("Sorry, we couldn't find any results"));
+                child: NoResultsMessage());
           case SearchStateSuccess():
             return Scrollbar(
                 child: ListView.builder(
@@ -125,5 +127,33 @@ class ReceiptSearchTile extends StatelessWidget {
           showImageViewer(context, imageProvider);
         },
         title: Text(receipt.name.split('.').first));
+  }
+}
+
+class NoResultsMessage extends StatelessWidget {
+  const NoResultsMessage({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text("Sorry, we couldn't find any results",
+        style:
+            TextStyle(fontSize: 18, fontWeight: FontWeight.w500));
+  }
+}
+
+class NoQueryMessage extends StatelessWidget {
+  const NoQueryMessage({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return const Text(
+              'Start typing for any words on a receipt',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            );
   }
 }
