@@ -1,7 +1,10 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:json_annotation/json_annotation.dart';
+
 // class to model receipts to be stored in sql db
+@JsonSerializable()
 class Receipt {
     final String id;
     final String name;
@@ -35,7 +38,7 @@ class Receipt {
       'dateCreated': dateCreated,
       'lastModified': lastModified,
       'storageSize': storageSize,
-      'parentId': parentId
+      'parentId': parentId,
     };
   }
 
@@ -47,7 +50,7 @@ class Receipt {
       dateCreated: map['dateCreated'] as int,
       lastModified: map['lastModified'] as int,
       storageSize: map['storageSize'] as int,
-      parentId: map['parentId'] as String
+      parentId: map['parentId'] as String,
     );
   }
 

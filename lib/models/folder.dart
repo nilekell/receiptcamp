@@ -1,7 +1,10 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
-// class to model folder object in database to store receipts and other folders 
+import 'package:json_annotation/json_annotation.dart';
+
+// class to model folder object in database to store receipts and other folders
+ @JsonSerializable()
 class Folder {
   final String id;
   final String name;
@@ -14,17 +17,17 @@ class Folder {
     return <String, dynamic>{
       'id': id,
       'name': name,
+      'lastModified': lastModified,
       'parentId': parentId,
-      'lastModified': lastModified
     };
   }
 
-  factory Folder.fromMap(Map<dynamic, dynamic> map) {
+  factory Folder.fromMap(Map<String, dynamic> map) {
     return Folder(
       id: map['id'] as String,
       name: map['name'] as String,
+      lastModified: map['lastModified'] as int,
       parentId: map['parentId'] as String,
-      lastModified: map['lastModified'] as int
     );
   }
 
