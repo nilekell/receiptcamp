@@ -1,5 +1,5 @@
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:receiptcamp/data/repositories/database_repository.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
@@ -12,7 +12,7 @@ part 'folder_view_state.dart';
 
 // this cubit controls the initialisation, loading, displaying and any methods that can 
 // affect what is currently being displayed in the folder view e.g. move/delete/upload/rename
-class FolderViewCubit extends Cubit<FolderViewState> {
+class FolderViewCubit extends HydratedCubit<FolderViewState> {
   FolderViewCubit() : super(FolderViewInitial());
 
   // init folderview
@@ -181,4 +181,16 @@ renameReceipt(Receipt receipt, String newName) async {
     emit(FolderViewRenameFailure(oldName: receipt.name, newName: newName, folderId: receipt.parentId));
   }
 }
+
+  @override
+  FolderViewState? fromJson(Map<String, dynamic> json) {
+    // TODO: implement fromJson
+    throw UnimplementedError();
+  }
+
+  @override
+  Map<String, dynamic>? toJson(FolderViewState state) {
+    // TODO: implement toJson
+    throw UnimplementedError();
+  }
 }
