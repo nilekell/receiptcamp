@@ -515,7 +515,7 @@ class DatabaseService {
     // deleting ALL tags in database NOT SPECIFIC TO USER
     print('total tags deleted: ${await db.delete('tags')}');
     // deleting all folders in database (except root folder) NOT SPECIFIC TO USER
-    print('total folders deleted: ${await db.delete('folders', where: 'id != ?', whereArgs: ['a1'])}');
+    print('total folders deleted: ${await db.delete('folders', where: 'id != ?', whereArgs: [rootFolderId])}');
   }
 
   // Add Tag operations
