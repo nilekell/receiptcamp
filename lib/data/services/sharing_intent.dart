@@ -1,9 +1,10 @@
 // ignore_for_file: unused_local_variable
+import 'dart:async';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:receiptcamp/data/services/directory_path_provider.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
+import 'package:share_handler/share_handler.dart';
 
 class SharingIntentService {
   // singleton
@@ -19,24 +20,27 @@ class SharingIntentService {
 
   // For sharing images coming from outside the app while the app is in the memory
   Stream<List<File>> get mediaStream {
-    return ReceiveSharingIntent.getMediaStream().asyncMap(_mapSharedMediaFiles);
+    return ShareHandlerPlatform.instance.sharedMediaStream.asyncMap(_mapSharedAttachments);
   }
 
   // For sharing images coming from outside the app while the app is closed
   Future<List<File>> get initialMedia {
-    return ReceiveSharingIntent.getInitialMedia().then(_mapSharedMediaFiles);
+    return ShareHandlerPlatform.instance.getInitialSharedMedia().then(_mapSharedAttachments);
   }
 
-  Future<List<File>> _mapSharedMediaFiles(
-      List<SharedMediaFile> sharedMediaFiles) async {
+  Future<List<File>> _mapSharedAttachments(
+      SharedMedia? sharedMediaFiles) async {
 
-    // print('sharedMediaFiles count: ${sharedMediaFiles.length}');
+    print('sharedMediaFiles count: ${sharedMediaFiles!.attachments!.length}');
     List<File> sharedFiles = [];
+    for (final a in sharedMediaFiles.attachments!) {
+      sharedFiles.add(File(a!.path));
+    }
 
-    if (await _sharedFileIsZipFile(sharedMediaFiles)) {
-      final File zipFile = await _processZipMediaFile(sharedMediaFiles[0]);
+    if (await _sharedFileIsZipFile(sharedFiles)) {
+      final File zipFile = await _processZipMediaFile(sharedFiles[0]);
       sharedFiles = List.from([zipFile]);
-      ReceiveSharingIntent.reset();
+      ShareHandlerPlatform.instance.resetInitialSharedMedia();
       return sharedFiles;
     }
 
@@ -44,7 +48,7 @@ class SharingIntentService {
 
     ValidationError invalidImageReason = ValidationError.none;
 
-    for (final file in sharedMediaFiles) {
+    for (final file in sharedFiles) {
       // print('sharedMediaFile: ${file.path}');
       File sharedImage = File(file.path);
       String sharedImageExtension = extension(sharedImage.path);
@@ -75,13 +79,13 @@ class SharingIntentService {
       sharedImage.delete();
     }
 
-    ReceiveSharingIntent.reset();
+    ShareHandlerPlatform.instance.resetInitialSharedMedia();
 
     return sharedFiles;
   }
 
   Future<bool> _sharedFileIsZipFile(
-      List<SharedMediaFile> sharedMediaFiles) async {
+      List<File> sharedMediaFiles) async {
     try {
       if (sharedMediaFiles.length == 1) {
         final File sharedFile = File(sharedMediaFiles.first.path);
@@ -100,7 +104,7 @@ class SharingIntentService {
     }
   }
 
-  Future<File> _processZipMediaFile(SharedMediaFile sharedMediaFile) async {
+  Future<File> _processZipMediaFile(File sharedMediaFile) async {
     // removing URI scheme from path
     // this URI scheme is only present for zip files
     final String filePath = sharedMediaFile.path.replaceFirst('file://', '');

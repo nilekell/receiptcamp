@@ -2,32 +2,43 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
     <key>CFBundleVersion</key>
-	<string>$(FLUTTER_BUILD_NUMBER)</string>
-	<key>NSExtension</key>
-	<dict>
-		<key>NSExtensionAttributes</key>
-	<dict>
-		<key>PHSupportedMediaTypes</key>
-			<array>
-				<!--TODO: Add this flag, if you want to support sharing images into your app-->
-				<string>Image</string>
-			</array>
-		<key>NSExtensionActivationRule</key>
-		<dict>
-			<!--TODO: Add this flag, if you want to support sharing images into your app-->
-			<key>NSExtensionActivationSupportsImageWithMaxCount</key>
-			<integer>100</integer>
-			<key>NSExtensionActivationSupportsFileWithMaxCount</key>
-			<integer>1</integer>
-		</dict>
-	</dict>
-		<key>NSExtensionMainStoryboard</key>
-		<string>MainInterface</string>
-		<key>NSExtensionPointIdentifier</key>
-		<string>com.apple.share-services</string>
-	</dict>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>NSExtension</key>
+    <dict>
+        <key>NSExtensionAttributes</key>
+        <dict>
+            <key>PHSupportedMediaTypes</key>
+            <array>
+                <!--TODO: Add this flag, if you want to support sharing images into your app-->
+                <string>Image</string>
+            </array>
+            <key>NSExtensionActivationRule</key>
+            <string>SUBQUERY (
+                    extensionItems,
+                    $extensionItem,
+                    SUBQUERY (
+                        $extensionItem.attachments,
+                        $attachment,
+                        (
+                            ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.file-url"
+                            || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.image"
+                        )
+                    ).@count > 0
+                ).@count > 0
+            </string>
+            <!--TODO: Add these flags, if you want to support sharing images and files into your app-->
+            <key>NSExtensionActivationSupportsImageWithMaxCount</key>
+            <integer>100</integer>
+            <key>NSExtensionActivationSupportsFileWithMaxCount</key>
+            <integer>1</integer>
+        </dict>
+        <key>NSExtensionMainStoryboard</key>
+        <string>MainInterface</string>
+        <key>NSExtensionPointIdentifier</key>
+        <string>com.apple.share-services</string>
+    </dict>
 </dict>
 </plist>

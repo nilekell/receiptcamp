@@ -156,8 +156,6 @@ PODS:
     - PurchasesHybridCommon (= 7.1.0)
   - PurchasesHybridCommon (7.1.0):
     - RevenueCat (= 4.28.0)
-  - receive_sharing_intent (0.0.1):
-    - Flutter
   - RevenueCat (4.28.0)
   - SDWebImage (5.18.3):
     - SDWebImage/Core (= 5.18.3)
@@ -165,6 +163,14 @@ PODS:
   - SDWebImageWebPCoder (0.14.1):
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.17)
+  - share_handler_ios (0.0.11):
+    - Flutter
+    - share_handler_ios/share_handler_ios_models (= 0.0.11)
+    - share_handler_ios_models
+  - share_handler_ios/share_handler_ios_models (0.0.11):
+    - Flutter
+    - share_handler_ios_models
+  - share_handler_ios_models (0.0.9)
   - share_plus (0.0.1):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -195,7 +201,8 @@ DEPENDENCIES:
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - purchases_flutter (from `.symlinks/plugins/purchases_flutter/ios`)
-  - receive_sharing_intent (from `.symlinks/plugins/receive_sharing_intent/ios`)
+  - share_handler_ios (from `.symlinks/plugins/share_handler_ios/ios`)
+  - share_handler_ios_models (from `.symlinks/plugins/share_handler_ios/ios/Models`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite (from `.symlinks/plugins/sqflite/ios`)
@@ -259,8 +266,10 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   purchases_flutter:
     :path: ".symlinks/plugins/purchases_flutter/ios"
-  receive_sharing_intent:
-    :path: ".symlinks/plugins/receive_sharing_intent/ios"
+  share_handler_ios:
+    :path: ".symlinks/plugins/share_handler_ios/ios"
+  share_handler_ios_models:
+    :path: ".symlinks/plugins/share_handler_ios/ios/Models"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -308,15 +317,16 @@ SPEC CHECKSUMS:
   PromisesObjC: c50d2056b5253dadbd6c2bea79b0674bd5a52fa4
   purchases_flutter: 3ecf4b3263d84a7badb1c4090a09f9db711cc821
   PurchasesHybridCommon: 67d4953cf72b5c493426521fbe6481a3f80902e4
-  receive_sharing_intent: c0d87310754e74c0f9542947e7cbdf3a0335a3b1
   RevenueCat: 211ea3859e2ed3008152ea666054d1843355ce2f
   SDWebImage: 96e0c18ef14010b7485210e92fac888587ebb958
   SDWebImageWebPCoder: eb7970094ac1401eb4c8a1cd077f472dbc66497b
+  share_handler_ios: ae3584532280673e02aacdf77f2cdfb2c96b9211
+  share_handler_ios_models: fc638c9b4330dc7f082586c92aee9dfa0b87b871
   share_plus: 599aa54e4ea31d4b4c0e9c911bcc26c55e791028
   shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126
   sqflite: 31f7eba61e3074736dff8807a9b41581e4f7f15a
   url_launcher_ios: 08a3dfac5fb39e8759aeb0abbd5d9480f30fc8b4
 
-PODFILE CHECKSUM: d50ce5e049d109ecdce3feb579990146f6a44941
+PODFILE CHECKSUM: 368f27d56cf4257303f75256ded8233ca0fcccf7
 
 COCOAPODS: 1.14.2
