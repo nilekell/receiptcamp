@@ -40,6 +40,44 @@ void main() async {
     await PurchasesService.instance.initPlatformState();
   } on Exception catch (e) {
     print(e.toString());
+    final appMultiBlocProvider = MultiBlocProvider(
+    providers: [
+      BlocProvider(
+        create: (context) => SettingsCubit()..init(),
+      ),
+      BlocProvider<LandingCubit>(
+          create: (BuildContext context) => LandingCubit()),
+      BlocProvider<HomeBloc>(
+        create: (BuildContext context) =>
+            HomeBloc(databaseRepository: DatabaseRepository.instance)
+              ..add(HomeInitialEvent()),
+      ),
+      BlocProvider<FileExplorerCubit>(
+        create: (context) => FileExplorerCubit()..initializeFileExplorerCubit(),
+      ),
+      BlocProvider(
+        create: (context) => FolderViewCubit(
+            homeBloc: context.read<HomeBloc>(),
+            prefs: PreferencesService.instance)
+          ..initFolderView(),
+      ),
+      BlocProvider<SharingIntentCubit>(
+        create: (context) => SharingIntentCubit(
+            mediaStream: SharingIntentService.instance.mediaStream,
+            initialMedia: SharingIntentService.instance.initialMedia,
+            homeBloc: context.read<HomeBloc>(),
+            fileExplorerCubit: context.read<FileExplorerCubit>(),
+            landingCubit: context.read<LandingCubit>())
+          ..init(),
+      ),
+      BlocProvider(
+          create: (BuildContext context) =>
+              SearchBloc(databaseRepository: DatabaseRepository.instance)
+                ..add(const SearchInitialEvent()))
+    ],
+    child: const MyApp());
+
+    runApp(appMultiBlocProvider);
   }
 
   final appMultiBlocProvider = MultiBlocProvider(
@@ -78,7 +116,7 @@ void main() async {
                 ..add(const SearchInitialEvent()))
     ],
     child: const MyApp());
-
+    
   runApp(appMultiBlocProvider);
 
 }
