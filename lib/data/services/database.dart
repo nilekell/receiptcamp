@@ -205,15 +205,10 @@ class DatabaseService {
       String? commonCurrency;
       bool inconsistentCurrencyFound = false;
 
-      // Calculate cost of receipts in the current folder
       List<ReceiptWithPrice> receiptsWithPrice =
           await getReceiptsByPrice(folder.id, order);
-
-      // Determine the common currency
       if (receiptsWithPrice.isNotEmpty) {
-        commonCurrency = receiptsWithPrice[0]
-            .priceString[0];
-
+        commonCurrency = receiptsWithPrice[0].priceString[0];
         for (final receiptWithPrice in receiptsWithPrice) {
           if (receiptWithPrice.priceString[0] != commonCurrency) {
             inconsistentCurrencyFound = true;
@@ -222,21 +217,21 @@ class DatabaseService {
         }
       }
 
-      if (inconsistentCurrencyFound) {
-        foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
-        continue;
-      } else {
-        totalCost +=
-            receiptsWithPrice.fold(0, (sum, item) => sum + item.priceDouble);
-
-        // Recursively calculate the cost of subfolders
-        double subFoldersCost = await calculateSubFoldersCost(folder.id);
-        totalCost += subFoldersCost;
-
+      if (inconsistentCurrencyFound || receiptsWithPrice.isEmpty) {
         foldersWithCost
-            .add(FolderWithPrice(price: '$commonCurrency${totalCost.toString()}', folder: folder));
+            .add(FolderWithPrice(price: '--', folder: folder));
+        continue;
       }
+
+      totalCost +=
+          receiptsWithPrice.fold(0, (sum, item) => sum + item.priceDouble);
+      double subFoldersCost = await calculateSubFoldersCost(folder.id);
+      totalCost += subFoldersCost;
+
+      String displayPrice = (commonCurrency ?? '') + totalCost.toString();
+      foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
     }
+
 
 
     // Step 5: Sort the folders by total cost
