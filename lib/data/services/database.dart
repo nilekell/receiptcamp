@@ -411,6 +411,37 @@ Future<double> calculateSubFoldersCost(String folderId) async {
     return [...foldersList, ...receiptsList]; // combining two lists and return
   }
 
+  // Method to get all Folder objects for a specific folderId from the database.
+  Future<List<Folder>> getDirectFoldersByParentId(String folderId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> foldersMap = await db.rawQuery('''
+      SELECT *
+      FROM folders
+      WHERE parentId = ?
+    ''', [folderId]);
+
+    return List.generate(foldersMap.length, (i) {
+      return Folder(
+        id: foldersMap[i]['id'],
+        name: foldersMap[i]['name'],
+        lastModified: foldersMap[i]['lastModified'],
+        parentId: foldersMap[i]['parentId'],
+      );
+    });
+  }
+
+  Future<List<String>> getImmediateSubfolderIds(String folderId) async {
+    final db = await database;
+    // Execute the query to get all immediate subfolder IDs
+    List<Map<String, dynamic>> mapOfFolderIds = await db.rawQuery(
+      'SELECT id FROM folders WHERE parentId = ?',
+      [folderId],
+    );
+
+    // Map each item in the result to an element in the list
+    return mapOfFolderIds.map((item) => item['id'].toString()).toList();
+  }
+
   Future<List<Receipt>> getAllReceiptsInFolder(String folderId) async {
     final List<Receipt> allReceipts = [];
 
