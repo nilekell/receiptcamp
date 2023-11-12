@@ -281,13 +281,13 @@ Future<double> calculateSubFoldersCost(String folderId) async {
 
     double totalCost = 0.0;
     String? commonCurrency;
+    Set<String> currencySymbols = {'\$', '€', '¥', '£', '₹'};
 
     // Step 2: Iterate over each subfolder to calculate their total cost
     for (String subFolderId in subFolderIds) {
       // Recursively calculate the cost of this subfolder
       double subFolderCost = await calculateSubFoldersCost(subFolderId);
       totalCost += subFolderCost;
-
       // Step 3: Calculate the cost of receipts directly within this subfolder
       List<Map<String, dynamic>> receiptMaps = await db.rawQuery(
         'SELECT * FROM receipts WHERE parentId = ?',
@@ -296,29 +296,34 @@ Future<double> calculateSubFoldersCost(String folderId) async {
 
       for (var receiptMap in receiptMaps) {
         final Receipt receipt = Receipt.fromMap(receiptMap);
+        String priceString = await TextRecognitionService.extractPriceFromImage(
+            receipt.localPath);
 
-        final String priceString =
-            await TextRecognitionService.extractPriceFromImage(
-                receipt.localPath);
+        // Remove currency symbols from the price string
+        for (String symbol in currencySymbols) {
+          if (priceString.contains(symbol)) {
+            priceString = priceString.replaceAll(symbol, '');
+            break; // Stop checking after the first match
+          }
+        }
+
         final double priceDouble =
             double.tryParse(priceString.replaceAll(RegExp(r'[^\d.]'), '')) ??
                 0.0;
 
-        final String currency = priceString.trim()[0];
-
-        // Check if the currency is consistent
+        // Extract and check the currency symbol
         if (commonCurrency == null) {
-          commonCurrency = currency;
-        } else if (commonCurrency != currency) {
+          commonCurrency = priceString
+              .trim()
+              .substring(0, 1); // Extract first character as currency symbol
+        } else if (commonCurrency != priceString.trim().substring(0, 1)) {
           return 0.0; // Different currencies found, return 0.0
         }
-
 
         totalCost += priceDouble;
       }
     }
 
-    // Return the total cost of the folder including its subfolders and receipts
     return totalCost;
   }
 
