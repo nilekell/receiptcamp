@@ -9,7 +9,6 @@ import 'package:receiptcamp/presentation/screens/select_multiple_screen.dart';
 import 'package:receiptcamp/presentation/ui/file_explorer/receipt/receipt_sheet.dart';
 import 'package:receiptcamp/presentation/ui/ui_constants.dart';
 
-
 class ReceiptListTile extends StatelessWidget {
   final Receipt receipt;
   final String displayName;
@@ -32,7 +31,6 @@ class ReceiptListTile extends StatelessWidget {
         displayDate = Utility.formatDisplayDateFromDateTime(
             Utility.formatDateTimeFromUnixTimestamp(receipt.lastModified)),
         displaySize = Utility.bytesToSizeString(receipt.storageSize),
-          
         super(key: key);
 
   final TextStyle displayNameStyle = const TextStyle(
@@ -50,61 +48,76 @@ class ReceiptListTile extends StatelessWidget {
     }
   }
 
+  final ValueNotifier<bool> _showReceiptOptionsButton = ValueNotifier<bool>(true);
+
   @override
   Widget build(BuildContext context) {
-    return Draggable<Receipt>(
-      dragAnchorStrategy: (draggable, context, position) {
-        return const Offset(50, 50);
-      },
-      data: receipt,
-      childWhenDragging: ColorFiltered(
-        colorFilter: ColorFilter.mode(
-          Colors.black.withOpacity(0.3),
-          BlendMode.srcIn,
-        ),
-        child: ReceiptListTileVisual(receipt: receipt, subtitle: calculateSubtitle(price, withSize, displayDate),),
-      ),
-      feedback: Material(
-        color: Colors.transparent,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Opacity(
-              opacity: 0.7,
-              child: SizedBox(
-                height: 100,
-                width: 100,
-                child: ClipRRect(
-                  // square image corners
-                  borderRadius: const BorderRadius.all(Radius.zero),
-                  child: Image.file(
-                    File(receipt.localPath),
-                    fit: BoxFit.cover,
+    return Padding(
+        padding: const EdgeInsets.only(left: 10),
+        child: GestureDetector(
+          onLongPress: () {
+            Navigator.of(context).push(SlidingSelectMultipleTransitionRoute(
+                item: ListItem(item: receipt)));
+          },
+          child: ListTile(
+              leading: Draggable<Receipt>(
+                onDragStarted: () {
+                  _showReceiptOptionsButton.value = false;
+                },
+                onDragEnd: (details) {
+                  _showReceiptOptionsButton.value = true;
+                },
+                maxSimultaneousDrags: 1,
+                dragAnchorStrategy: (draggable, context, position) {
+                  return const Offset(50, 50);
+                },
+                data: receipt,
+                childWhenDragging: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withOpacity(0.3),
+                    BlendMode.srcIn,
+                  ),
+                  // adjusting position of visual list tile so it matches receipt list tile position
+                  child: Transform.translate(
+                    offset: const Offset(-26, -16),
+                    child: ReceiptListTileVisual(
+                      receipt: receipt,
+                      subtitle: calculateSubtitle(price, withSize, displayDate),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Transform.translate(
-              offset: const Offset(0, 10),
-              child: Text(
-                draggableName,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-      child: Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: GestureDetector(
-            onLongPress: () {
-              Navigator.of(context).push(
-                    SlidingSelectMultipleTransitionRoute(
-                        item: ListItem(item: receipt)));
-            },
-            child: ListTile(
-                leading: SizedBox(
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      Opacity(
+                        opacity: 0.7,
+                        child: SizedBox(
+                          height: 100,
+                          width: 100,
+                          child: ClipRRect(
+                            // square image corners
+                            borderRadius: const BorderRadius.all(Radius.zero),
+                            child: Image.file(
+                              File(receipt.localPath),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: const Offset(0, 10),
+                        child: Text(
+                          draggableName,
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                child: SizedBox(
                   height: 50,
                   width: 50,
                   child: ClipRRect(
@@ -116,31 +129,39 @@ class ReceiptListTile extends StatelessWidget {
                     ),
                   ),
                 ),
-                subtitle: Text(
-                  calculateSubtitle(price, withSize, displayDate),
-                  style: displayDateStyle,
-                ),
-                trailing: IconButton(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: Color(primaryGrey),
-                    size: 30,
-                  ),
-                  onPressed: () {
-                    showReceiptOptions(
-                        context, context.read<FolderViewCubit>(), receipt);
-                  },
-                ),
-                onTap: () {
-                  Navigator.of(context)
-                      .push(SlidingImageTransitionRoute(receipt: receipt));
+              ),
+              subtitle: Text(
+                calculateSubtitle(price, withSize, displayDate),
+                style: displayDateStyle,
+              ),
+              trailing: ValueListenableBuilder(
+                valueListenable: _showReceiptOptionsButton,
+                builder: (context, value, child) {
+                  return Visibility(
+                    visible: _showReceiptOptionsButton.value,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.more_vert,
+                        color: Color(primaryGrey),
+                        size: 30,
+                      ),
+                      onPressed: () {
+                        showReceiptOptions(
+                            context, context.read<FolderViewCubit>(), receipt);
+                      },
+                    ),
+                  );
                 },
-                title: Text(displayName,
-                    style: displayNameStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis)),
-          )),
-    );
+              ),
+              onTap: () {
+                Navigator.of(context)
+                    .push(SlidingImageTransitionRoute(receipt: receipt));
+              },
+              title: Text(displayName,
+                  style: displayNameStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis)),
+        ));
   }
 }
 
@@ -150,7 +171,8 @@ class ReceiptListTileVisual extends StatelessWidget {
   final String displayName;
   final String subtitle;
 
-  ReceiptListTileVisual({Key? key, required this.receipt, required this.subtitle})
+  ReceiptListTileVisual(
+      {Key? key, required this.receipt, required this.subtitle})
       // displayName is the file name without the file extension and is cut off when the receipt name
       // is > 25 chars or would require 2 lines to be shown completely
       : displayName = receipt.name.length > 25
@@ -160,48 +182,39 @@ class ReceiptListTileVisual extends StatelessWidget {
 
   final TextStyle displayNameStyle = const TextStyle(
       fontSize: 20, fontWeight: FontWeight.w600, color: Color(primaryGrey));
-  
-  final TextStyle subTextStyle = const TextStyle(fontSize: 16, fontWeight: FontWeight.w400);
+
+  final TextStyle subTextStyle =
+      const TextStyle(fontSize: 16, fontWeight: FontWeight.w400);
 
   @override
   Widget build(BuildContext context) {
     return Padding(
         padding: const EdgeInsets.only(left: 10),
-        child: ListTile(
-            leading: SizedBox(
-              height: 50,
-              width: 50,
-              child: ClipRRect(
-                // square image corners
-                borderRadius: const BorderRadius.all(Radius.zero),
-                child: Image.file(
-                  File(receipt.localPath),
-                  fit: BoxFit.cover,
+        child: SizedBox(
+          width: 300,
+          child: ListTile(
+              leading: SizedBox(
+                height: 50,
+                width: 50,
+                child: ClipRRect(
+                  // square image corners
+                  borderRadius: const BorderRadius.all(Radius.zero),
+                  child: Image.file(
+                    File(receipt.localPath),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            ),
-            subtitle: Text(
-              subtitle, // Ternary operator to decide text
-              style: subTextStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            trailing: IconButton(
-              icon: const Icon(
-                Icons.more_vert,
-                color: Color(primaryGrey),
-                size: 30,
-              ),
-              onPressed: () {
-                return;
-              },
-            ),
-            onTap: () {
-              return;
-            },
-            title: Text(displayName,
-                style: displayNameStyle,
+              subtitle: Text(
+                subtitle, // Ternary operator to decide text
+                style: subTextStyle,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis)));
+                overflow: TextOverflow.ellipsis,
+              ),
+              title: Text(displayName,
+                  style: displayNameStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis)),
+        ));
   }
 }
