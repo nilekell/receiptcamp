@@ -186,7 +186,6 @@ class DatabaseService {
   // method to get folders by price
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
-        print('getFoldersByPrice');
     // Step 1: Check for an empty folder
     if (await folderIsEmpty(folderId)) return <FolderWithPrice>[];
 
@@ -214,7 +213,7 @@ class DatabaseService {
         }
       }
 
-      if (inconsistentCurrencyFound || receiptsWithPrice.isEmpty) {
+      if (inconsistentCurrencyFound) {
         foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
         return foldersWithCost;
       }
