@@ -186,15 +186,12 @@ class DatabaseService {
   // method to get folders by price
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
+        print('getFoldersByPrice');
     // Step 1: Check for an empty folder
     if (await folderIsEmpty(folderId)) return <FolderWithPrice>[];
 
-    // Step 2: Retrieve all subfolders
-    List<String> subFolderIds = await getRecursiveSubFolderIds(folderId);
-    List<Folder> subFolders = [];
-    for (final id in subFolderIds) {
-      subFolders.add(await getFolderById(id));
-    }
+    // Step 2: Retrieve direct subfolders
+    List<Folder> subFolders = await getDirectFoldersByParentId(folderId);
 
     // Step 3: Initialize folder cost data structure
     List<FolderWithPrice> foldersWithCost = [];
@@ -205,8 +202,8 @@ class DatabaseService {
       String? commonCurrency;
       bool inconsistentCurrencyFound = false;
 
-      List<ReceiptWithPrice> receiptsWithPrice =
-          await getReceiptsByPrice(folder.id, order);
+      List<ReceiptWithPrice> receiptsWithPrice = await getReceiptsByPrice(folder.id, order);
+
       if (receiptsWithPrice.isNotEmpty) {
         commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
         for (final receiptWithPrice in receiptsWithPrice) {
@@ -228,10 +225,14 @@ class DatabaseService {
       totalCost += subFoldersCost;
 
      String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
-      foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
+
+     if (folder.parentId != folderId) {
+      print('skipping ${folder.name}');
+      continue;
+     }
+
+     foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
     }
-
-
 
     // Step 5: Sort the folders by total cost
     foldersWithCost.sort((a, b) {
@@ -254,6 +255,10 @@ class DatabaseService {
         return 0; // Do not sort if the order parameter is invalid
       }
     });
+
+  for (final priceFolder in foldersWithCost) {
+    print(priceFolder.folder.name);
+  }
 
   // Step 6: Return the result
   return foldersWithCost;
