@@ -208,9 +208,9 @@ class DatabaseService {
       List<ReceiptWithPrice> receiptsWithPrice =
           await getReceiptsByPrice(folder.id, order);
       if (receiptsWithPrice.isNotEmpty) {
-        commonCurrency = receiptsWithPrice[0].priceString[0];
+        commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
         for (final receiptWithPrice in receiptsWithPrice) {
-          if (receiptWithPrice.priceString[0] != commonCurrency) {
+          if (await TextRecognitionService.getCurrencySymbol(receiptWithPrice.priceString) != commonCurrency) {
             inconsistentCurrencyFound = true;
             break;
           }
@@ -218,9 +218,8 @@ class DatabaseService {
       }
 
       if (inconsistentCurrencyFound || receiptsWithPrice.isEmpty) {
-        foldersWithCost
-            .add(FolderWithPrice(price: '--', folder: folder));
-        continue;
+        foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
+        return foldersWithCost;
       }
 
       totalCost +=
@@ -228,7 +227,7 @@ class DatabaseService {
       double subFoldersCost = await calculateSubFoldersCost(folder.id);
       totalCost += subFoldersCost;
 
-      String displayPrice = (commonCurrency ?? '') + totalCost.toString();
+     String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
       foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
     }
 
@@ -308,11 +307,12 @@ Future<double> calculateSubFoldersCost(String folderId) async {
 
         // Extract and check the currency symbol
         if (commonCurrency == null) {
-          commonCurrency = priceString
-              .trim()
-              .substring(0, 1); // Extract first character as currency symbol
-        } else if (commonCurrency != priceString.trim().substring(0, 1)) {
-          return 0.0; // Different currencies found, return 0.0
+          commonCurrency =
+              await TextRecognitionService.getCurrencySymbol(priceString);
+        } else if (await TextRecognitionService.getCurrencySymbol(
+                priceString) !=
+            commonCurrency) {
+          return 0.0;
         }
 
         totalCost += priceDouble;
