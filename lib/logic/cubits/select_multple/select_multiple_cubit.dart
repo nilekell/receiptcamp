@@ -21,15 +21,7 @@ class SelectMultipleCubit extends Cubit<SelectMultipleState> {
     activate(selectedItem);
   }
 
-  Future<void> activate(ListItem selectedItem) async {
-    // activate does not actually contain any async code
-    // adding an await here means that 
-    // SelectMultipleInitial, SelectMultipleLoading, SelectMultipleActivated
-    // are not emitted immediately after init() is called,
-    // which means there is not enough time for SelectMultipleView build()
-    // method to be called, so BlocListener has not been inserted into widget tree yet,
-    // resulting in listener not being able to respond to any states
-    await Future.delayed(const Duration(seconds: 0));
+  void activate(ListItem selectedItem) {
     emit(SelectMultipleLoading());
 
     try {
