@@ -267,7 +267,6 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
   Widget build(BuildContext context) {
     return BlocListener<SelectMultipleCubit, SelectMultipleState>(
       listener: (context, state) {
-        print('listener runnning');
         if (state is SelectMultipleActivated) {
           // this code should only run once, when the SelectMultipleView is setup
           // currently SelectMultipleActivated is only emitted once so it is fine
