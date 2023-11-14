@@ -2,8 +2,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:receiptcamp/data/data_constants.dart';
-import 'package:receiptcamp/data/repositories/database_repository.dart';
-import 'package:receiptcamp/data/services/preferences.dart';
 import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
 import 'package:receiptcamp/logic/cubits/folder_view/folder_view_cubit.dart';
 import 'package:receiptcamp/models/folder.dart';
@@ -17,14 +15,21 @@ class SelectMultipleCubit extends Cubit<SelectMultipleState> {
 
   final FolderViewCubit folderViewCubit;
   final FileExplorerCubit fileExplorerCubit;
-  final _prefs = PreferencesService.instance;
 
   void init(ListItem selectedItem) {
     emit(SelectMultipleInitial());
     activate(selectedItem);
   }
 
-  void activate(ListItem selectedItem) async {
+  Future<void> activate(ListItem selectedItem) async {
+    // activate does not actually contain any async code
+    // adding an await here means that 
+    // SelectMultipleInitial, SelectMultipleLoading, SelectMultipleActivated
+    // are not emitted immediately after init() is called,
+    // which means there is not enough time for SelectMultipleView build()
+    // method to be called, so BlocListener has not been inserted into widget tree yet,
+    // resulting in listener not being able to respond to any states
+    await Future.delayed(const Duration(seconds: 0));
     emit(SelectMultipleLoading());
 
     try {
@@ -43,29 +48,7 @@ class SelectMultipleCubit extends Cubit<SelectMultipleState> {
         return;
       }
 
-      // setting last order & column values
-      final String lastColumn = _prefs.getLastColumn();
-      final String lastOrder = _prefs.getLastOrder();
-
-      List<Object> items;
-
-      switch (lastColumn) {
-        case 'price':
-          final List<FolderWithPrice> foldersWithPrice = await DatabaseRepository.instance.getFoldersByPrice(parentId, lastOrder);
-          final List<ReceiptWithPrice> receiptsWithPrices = await DatabaseRepository.instance.getReceiptsByPrice(parentId, lastOrder);
-          items = [...foldersWithPrice, ...receiptsWithPrices];
-          break;
-        case 'storageSize':
-          final List<FolderWithSize> foldersWithSize = await DatabaseRepository.instance.getFoldersByTotalReceiptSize(parentId, lastOrder);
-          final List<ReceiptWithSize> receiptsWithSize =  await DatabaseRepository.instance.getReceiptsBySize(parentId, lastOrder);
-          items = [...foldersWithSize, ...receiptsWithSize];
-          break;
-        default:
-          final List<Folder> folders = await DatabaseRepository.instance.getFoldersInFolderSortedBy(parentId, lastColumn, lastOrder);
-          final List<Receipt> receipts = await DatabaseRepository.instance.getReceiptsInFolderSortedBy(parentId, lastColumn, lastOrder);
-          items = [...folders, ...receipts];
-          break;
-      }
+      List<Object> items = List.from(folderViewCubit.cachedCurrentlyDisplayedFiles);
 
       // Remove the selected item from the list
       items.removeWhere((element) {
