@@ -95,6 +95,21 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
       duration: const Duration(milliseconds: 200),
     );
     super.initState();
+    // only listening to state here since activate() is NOT async
+    final selectMultipleCubitState = context.read<SelectMultipleCubit>().state;
+    if (selectMultipleCubitState is SelectMultipleActivated) {
+      // this code should only run once, when the SelectMultipleView is setup
+      // currently SelectMultipleActivated is only emitted once so it is fine
+      final initiallySelectedListItem =
+          selectMultipleCubitState.initiallySelectedItem;
+      final restOfListItems = selectMultipleCubitState.items;
+      // adding initially selected item to currentlySelectedListItems
+      currentlySelectedListItemsNotifier.value.add(initiallySelectedListItem);
+      // adding initially selected item to allItems first
+      allItems.add(initiallySelectedListItem);
+      // adding rest of folder contents to allItems
+      allItems.addAll(restOfListItems);
+    }
   }
 
   @override
@@ -119,8 +134,8 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
     bool itemAlreadySelected = currentlySelectedListItemsNotifier.value.any((element) => listItem.id == element.id);
     if (!itemAlreadySelected) {
       currentlySelectedListItemsNotifier.value.add(listItem);
-      print('added ${listItem.runtimeType}');
-      print('num in currentlySelectedListItems: ${currentlySelectedListItemsNotifier.value.length}');
+      // print('added ${listItem.runtimeType}');
+      // print('num in currentlySelectedListItems: ${currentlySelectedListItemsNotifier.value.length}');
     } else {
       print('cannot add item, item already in list');
     }
@@ -131,14 +146,14 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
     bool itemAlreadySelected = currentlySelectedListItemsNotifier.value.any((element) => listItem.id == element.id);
     if (itemAlreadySelected) {
       currentlySelectedListItemsNotifier.value.removeWhere((element) => element.id == listItem.id);
-      print('num in currentlySelectedListItems: ${currentlySelectedListItemsNotifier.value.length}');
+      // print('num in currentlySelectedListItems: ${currentlySelectedListItemsNotifier.value.length}');
     } else {
       print('cannot remove item, item not found in list');
     }
   }
 
   void toggleItem(ListItem listItem, bool value) {
-    print('toggleItem');
+    // print('toggleItem');
     if (!value) removeItem(listItem);
     if (value) addItem(listItem);
 
@@ -151,7 +166,7 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
 
   void isDeleteEnabled() {
     _deleteActionEnabled.value = currentlySelectedListItemsNotifier.value.isNotEmpty;
-    print('_deleteActionEnabled.value: ${_deleteActionEnabled.value}');
+    // print('_deleteActionEnabled.value: ${_deleteActionEnabled.value}');
   }
 
   void isMoveEnabled() {
@@ -167,20 +182,18 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
   }
 
   void _toggleSelectAll() {
-    print('allSelected before toggle: ${allSelectedNotifier.value}');
-    print(
-        'currentlySelectedListItems before toggle: ${currentlySelectedListItemsNotifier.value}');
+    // print('allSelected before toggle: ${allSelectedNotifier.value}');
+    // print('currentlySelectedListItems before toggle: ${currentlySelectedListItemsNotifier.value}');
     if (!allSelectedNotifier.value) {
       currentlySelectedListItemsNotifier.value = List.from(allItems);
-      print('allItems assigned to currentlySelectedListItems');
+      // print('allItems assigned to currentlySelectedListItems');
     } else {
       currentlySelectedListItemsNotifier.value.clear();
     }
 
     allSelectedNotifier.value = !allSelectedNotifier.value;
-    print('allSelected after toggle: ${allSelectedNotifier.value}');
-    print(
-        'currentlySelectedListItems after toggle: ${currentlySelectedListItemsNotifier.value}');
+    // print('allSelected after toggle: ${allSelectedNotifier.value}');
+    // print('currentlySelectedListItems after toggle: ${currentlySelectedListItemsNotifier.value}');
 
     isDeleteEnabled();
     isMoveEnabled();
@@ -266,22 +279,9 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
   @override
   Widget build(BuildContext context) {
     return BlocListener<SelectMultipleCubit, SelectMultipleState>(
+      listenWhen: (previous, current) => current is SelectMultipleActionSuccess,
       listener: (context, state) {
-        if (state is SelectMultipleActivated) {
-          // this code should only run once, when the SelectMultipleView is setup
-          // currently SelectMultipleActivated is only emitted once so it is fine
-          final initiallySelectedListItem = state.initiallySelectedItem;
-          final restOfListItems = state.items;
-          // adding initially selected item to currentlySelectedListItems
-          currentlySelectedListItemsNotifier.value.add(initiallySelectedListItem);
-          // adding initially selected item to allItems first
-          allItems.add(initiallySelectedListItem);
-          // adding rest of folder contents to allItems
-          allItems.addAll(restOfListItems);
-        }
-        if (state is SelectMultipleActionSuccess) {
           Navigator.of(context).pop();
-        }
       },
       child: Scaffold(
           appBar: AppBar(
