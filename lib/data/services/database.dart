@@ -768,6 +768,7 @@ Future<double> calculateSubFoldersCost(String folderId) async {
     }
   }
 
+  // checks if folders has no receipts only
   Future<bool> folderIsEmpty(String folderId) async {
     final db = await database;
 
@@ -798,6 +799,48 @@ Future<double> calculateSubFoldersCost(String folderId) async {
       }
 
     return totalSubReceipts < 1;
+  }
+
+  // checks if folders has no receipts and folders only
+  Future<bool> folderHasNoContents(String folderId) async {
+    int numFolders = 0;
+    int numReceipts = 0;
+    List<String> subFolderIds = [];
+
+    // getting number of receipts in selected subfolder
+    numReceipts = await getReceiptCountInFolder(folderId);
+
+    // getting list of ids for all sub folders within selected folder
+    subFolderIds = await getRecursiveSubFolderIds(folderId);
+    numFolders = subFolderIds.length;
+
+    if (numFolders < 1) {
+       return numReceipts < 1;
+    }
+
+    for (final id in subFolderIds) {
+      // getting number of receipts in each subfolder
+      int subFolderReceiptCount = await getReceiptCountInFolder(id);
+      numReceipts += subFolderReceiptCount;
+    }
+
+    return numReceipts + numFolders < 1;
+  }
+
+  // getting number of receipts within selected folder (not-recursive)
+  Future<int> getReceiptCountInFolder(String folderId) async {
+    final db = await database;
+    final countReceiptsResult = await db.rawQuery('''
+    SELECT COUNT (*)
+    FROM receipts
+    WHERE parentId = ?
+    ''', [folderId]);
+
+    //adding number of receipts found directly in a folder to [totalSubReceipts]
+    int numReceipts = Sqflite.firstIntValue(countReceiptsResult) ?? 0;
+    numReceipts;
+
+    return numReceipts;
   }
 
   Future<void> deleteAllFoldersExceptRoot() async {
