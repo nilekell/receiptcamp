@@ -186,9 +186,9 @@ class DatabaseService {
   // method to get folders by price
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
-        
-    // Step 1: Check is this folder contains no folders
-    if (await folderIsEmpty(folderId)) return <FolderWithPrice>[];
+
+    // Step 1: Check is this folder contains no folders and receipts
+    if (await folderHasNoContents(folderId)) return <FolderWithPrice>[];
 
     // Step 2: Retrieve direct subfolders
     List<Folder> subFolders = await getDirectFoldersByParentId(folderId);
@@ -202,7 +202,7 @@ class DatabaseService {
       String? commonCurrency;
       bool inconsistentCurrencyFound = false;
 
-      // if a direct subfolder is empty, return it with a 'null' price
+      // if a direct subfolder contains receipts, return it with a 'null' price
       if (await folderIsEmpty(folder.id)) {
         foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
         continue; 
@@ -299,7 +299,7 @@ Future<double> calculateSubFoldersCost(String folderId) async {
     for (String subFolderId in subFolderIds) {
 
       // skipping over empty nested folders
-      if (await folderIsEmpty(subFolderId)) continue;
+      if (await folderHasNoContents(subFolderId)) continue;
 
       // Step 9.4: Recursively calculate the cost of this subfolder
       double subFolderCost = await calculateSubFoldersCost(subFolderId);
