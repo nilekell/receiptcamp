@@ -186,7 +186,8 @@ class DatabaseService {
   // method to get folders by price
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
-    // Step 1: Check for an empty folder
+        
+    // Step 1: Check is this folder contains no folders
     if (await folderIsEmpty(folderId)) return <FolderWithPrice>[];
 
     // Step 2: Retrieve direct subfolders
@@ -201,8 +202,16 @@ class DatabaseService {
       String? commonCurrency;
       bool inconsistentCurrencyFound = false;
 
+      // if a direct subfolder is empty, return it with a 'null' price
+      if (await folderIsEmpty(folder.id)) {
+        foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
+        continue; 
+      }
+
+      // Step 5: Getting receipts in a direct subfolder by price
       List<ReceiptWithPrice> receiptsWithPrice = await getReceiptsByPrice(folder.id, order);
 
+      // Step 6: Gettng currency symbol from receipts
       if (receiptsWithPrice.isNotEmpty) {
         commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
         for (final receiptWithPrice in receiptsWithPrice) {
@@ -213,27 +222,36 @@ class DatabaseService {
         }
       }
 
+      // Step 7: Checking if all receipts have the same currency.
+      // If not, add a Folder to be returned with a 'null' price
       if (inconsistentCurrencyFound) {
         foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
-        return foldersWithCost;
+        continue;
       }
 
+      // Step 8: If all receipts have the same currency, add the total cost of the
+      // receipts to the running total for the folder
       totalCost +=
           receiptsWithPrice.fold(0, (sum, item) => sum + item.priceDouble);
+
+      // Step 9: Get the total cost of receipts in all nested subfolders 
       double subFoldersCost = await calculateSubFoldersCost(folder.id);
+
+      // Step 10: Adding total from all subfolders to folder's running total
       totalCost += subFoldersCost;
+      
+      // Step 11: Getting price to be displayed for a folder without rounding but keeping 2 decimal places
+      String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
 
-     String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
-
-     if (folder.parentId != folderId) {
-      print('skipping ${folder.name}');
-      continue;
-     }
-
-     foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
+      // Step 12: Adding folder to be returned with display price
+      foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
     }
 
-    // Step 5: Sort the folders by total cost
+    if (foldersWithCost.length == 1) {
+      return foldersWithCost;
+    }
+
+    // Step 13: Sort the folders by total cost
     foldersWithCost.sort((a, b) {
       // Define a pattern to remove non-numeric characters (assuming currency symbols and commas)
       final pattern = RegExp(r'[^\d.]');
@@ -255,11 +273,7 @@ class DatabaseService {
       }
     });
 
-  for (final priceFolder in foldersWithCost) {
-    print(priceFolder.folder.name);
-  }
-
-  // Step 6: Return the result
+  // Step 14: Return the immediate subfolders with their prices
   return foldersWithCost;
 }
 
@@ -267,13 +281,13 @@ class DatabaseService {
 Future<double> calculateSubFoldersCost(String folderId) async {
     final db = await database;
 
-    // Step 1: Get all immediate subfolder IDs of the current folder
+    // Step 9.1: Get all immediate subfolder IDs of the current folder
     List<Map<String, dynamic>> subFolderMaps = await db.rawQuery(
       'SELECT id FROM folders WHERE parentId = ?',
       [folderId],
     );
 
-    // Extract folder IDs as Strings
+    // Step 9.2: Extract folder IDs as Strings
     List<String> subFolderIds =
         subFolderMaps.map((map) => map['id'] as String).toList();
 
@@ -281,12 +295,19 @@ Future<double> calculateSubFoldersCost(String folderId) async {
     String? commonCurrency;
     Set<String> currencySymbols = {'\$', '€', '¥', '£', '₹'};
 
-    // Step 2: Iterate over each subfolder to calculate their total cost
+    // Step 9.3: Iterate over each subfolder to calculate their total cost
     for (String subFolderId in subFolderIds) {
-      // Recursively calculate the cost of this subfolder
+
+      // skipping over empty nested folders
+      if (await folderIsEmpty(subFolderId)) continue;
+
+      // Step 9.4: Recursively calculate the cost of this subfolder
       double subFolderCost = await calculateSubFoldersCost(subFolderId);
+
+      // Step 9.5: add single subfolder's cost to the cost of its immediate parent
       totalCost += subFolderCost;
-      // Step 3: Calculate the cost of receipts directly within this subfolder
+
+      // Step 9.6: Calculate the cost of receipts directly within this subfolder
       List<Map<String, dynamic>> receiptMaps = await db.rawQuery(
         'SELECT * FROM receipts WHERE parentId = ?',
         [subFolderId],
@@ -319,10 +340,12 @@ Future<double> calculateSubFoldersCost(String folderId) async {
           return 0.0;
         }
 
+        // Step 9.7: Adding price of each receipt found directly in this sub folder to the total cost
         totalCost += priceDouble;
       }
     }
 
+    // Step 9.8: Returning the total cost of the subfolder
     return totalCost;
   }
 
