@@ -844,17 +844,27 @@ Future<double> calculateSubFoldersCost(String folderId) async {
   }
 
   Future<void> deleteAllFoldersExceptRoot() async {
-  final Database db = await database;
-  
-  // delete all folders except the root folder
-  await db.delete('folders', where: 'id != ?', whereArgs: [rootFolderId]);
-  
-  // delete all receipts and tags because they reference folders that no longer exist
-  await db.delete('receipts');
-  await db.delete('tags');
+    final Database db = await database;
+    
+    // delete all folders except the root folder
+    await db.delete('folders', where: 'id != ?', whereArgs: [rootFolderId]);
+    
+    // delete all receipts and tags because they reference folders that no longer exist
+    await db.delete('receipts');
+    await db.delete('tags');
 
-  FileService.deleteAllReceiptImages();
-}
+    FileService.deleteAllReceiptImages();
+  }
+
+  Future<int> updateFolder(Folder folder) async {
+    final db = await database;
+    return await db.update(
+      'folders',
+      folder.toMap(),
+      where: 'id = ?',
+      whereArgs: [folder.id],
+    );
+  }
 
   // Add Receipt operations
 

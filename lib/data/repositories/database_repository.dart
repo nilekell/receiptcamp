@@ -101,6 +101,10 @@ class DatabaseRepository {
     return await _databaseService.folderExists(id: id, name: name);
   }
 
+  Future<int> updateFolder(Folder folder) async {
+    return await _databaseService.updateFolder(folder);
+  }
+
   // Receipt methods
 
   Future<int> insertReceipt(Receipt receipt) async {
