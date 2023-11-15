@@ -774,27 +774,51 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   updateReceiptDate(Receipt receipt, int newTimestamp) async {
     try {
-      final updatedReceipt = Receipt(
-          id: receipt.id,
-          name: receipt.name,
-          fileName: receipt.fileName,
-          dateCreated: newTimestamp,
-          lastModified: newTimestamp,
-          storageSize: receipt.storageSize,
-          parentId: receipt.parentId);
-      await DatabaseRepository.instance.updateReceipt(updatedReceipt);
+        int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
 
-      emit(FolderViewUpdateDateSuccess(folderId: receipt.parentId));
-      // notifying home bloc to reload when a receipt is renamed
-      homeBloc.add(HomeLoadReceiptsEvent());
+        dynamic updatedReceipt = Receipt(
+            id: receipt.id,
+            name: receipt.name,
+            fileName: receipt.fileName,
+            dateCreated: newTimestamp,
+            lastModified: newTimestamp,
+            storageSize: receipt.storageSize,
+            parentId: receipt.parentId
+        );
 
-      fetchFilesInFolderSortedBy(receipt.parentId);
+        // Check if the receipt is found in the cached list
+        if (index != -1) {
+            // getting receipt type
+            switch (receipt) {
+                case ReceiptWithPrice():
+                    updatedReceipt = ReceiptWithPrice(priceString: receipt.priceString, priceDouble: receipt.priceDouble, receipt: updatedReceipt);
+                case ReceiptWithSize():
+                    updatedReceipt = ReceiptWithSize(withSize: receipt.withSize, receipt: updatedReceipt);
+                default:
+                    break;
+            }
+
+            // updating cache
+            cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
+
+            emit(FolderViewUpdateDateSuccess(folderId: receipt.parentId));
+
+            // emitting cache
+            retrieveCachedItems();
+
+            // updating db
+            DatabaseRepository.instance.updateReceipt(updatedReceipt);
+
+            // notifying home bloc to reload
+            homeBloc.add(HomeLoadReceiptsEvent());
+
+        } else {
+            throw Exception('Unexpected error: ${receipt.name} not found in cache');
+        }
     } on Exception catch (e) {
-      print(e.toString());
-      emit(FolderViewUpdateDateFailure(folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
+        print(e.toString());
+        emit(FolderViewUpdateDateFailure(folderId: receipt.parentId));
+        fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
     }
-
-
-  }
+}
 }
