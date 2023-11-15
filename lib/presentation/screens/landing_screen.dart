@@ -47,7 +47,9 @@ class _LandingScreenState extends State<LandingScreen>
       builder: (context, state) {
         if (state is OnboardingShowScreen) {
           return Scaffold(
-            body: OnboardingView(),
+            body: Container(
+              color: Colors.transparent,
+              child: const OnboardingView()),
           );
         } else {
           return Scaffold(
