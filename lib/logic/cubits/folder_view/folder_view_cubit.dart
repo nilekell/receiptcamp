@@ -181,24 +181,60 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // move folder
   moveFolder(Folder folder, String targetFolderId) async {
     final String targetFolderName =
-        (await DatabaseRepository.instance.getFolderById(targetFolderId)).name;
-    try {
-      await DatabaseRepository.instance.moveFolder(folder, targetFolderId);
-      emit(FolderViewMoveSuccess(
-          oldName: folder.name,
-          newName: targetFolderName,
-          folderId: folder.parentId));
-      
-      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Folder && element.id == folder.id);
-      retrieveCachedItems();
+      (await DatabaseRepository.instance.getFolderById(targetFolderId))
+          .name;
 
+    try {
+      // Check if the folder is found in the cached list
+      int index = cachedCurrentlyDisplayedFiles.indexWhere(
+          (element) => element is Folder && element.id == folder.id);
+
+      // updating cache
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Folder && element.id == folder.id);
+
+      // Update the parentId of the folder in the cached list
+      dynamic updatedFolder = Folder(
+        id: folder.id,
+        name: folder.name,
+        lastModified: Utility.getCurrentTime(),
+        parentId: targetFolderId,
+      );
+
+      if (index != -1) {
+        // getting folder type
+        switch (folder) {
+          case FolderWithPrice():
+            updatedFolder =
+                FolderWithPrice(price: folder.price, folder: updatedFolder);
+          case FolderWithSize():
+            updatedFolder = FolderWithSize(
+                storageSize: folder.storageSize, folder: updatedFolder);
+          default:
+            break;
+        }
+
+        emit(FolderViewMoveSuccess(
+            oldName: folder.name,
+            newName: targetFolderName,
+            folderId: folder.parentId));
+
+        // emitting cache
+        retrieveCachedItems();
+
+        // updating db
+        DatabaseRepository.instance.updateFolder(updatedFolder);
+      } else {
+        throw Exception('Unexpected error: ${folder.name} not found in cache');
+      }
+      
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: folder.name,
           newName: targetFolderName,
           folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(folder.parentId);
     }
   }
 
