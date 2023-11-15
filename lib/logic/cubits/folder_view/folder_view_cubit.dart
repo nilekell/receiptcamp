@@ -258,7 +258,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       print(e.toString());
       emit(FolderViewDeleteFailure(
           deletedName: deletedFolder.name, folderId: deletedFolder.parentId));
-      fetchFilesInFolderSortedBy(deletedFolder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(deletedFolder.parentId, useCachedFiles: false);
     }
   }
 
@@ -333,7 +333,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       print(e.toString());
       emit(FolderViewRenameFailure(
           oldName: folder.name, newName: newName, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(folder.parentId);
     }
   }
 
@@ -418,7 +418,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       print(e.toString());
       emit(FolderViewDeleteFailure(
           deletedName: deletedReceipt.name, folderId: deletedReceipt.parentId));
-      fetchFilesInFolderSortedBy(deletedReceipt.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(deletedReceipt.parentId);
     }
   }
 
@@ -509,7 +509,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-       fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+       fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
@@ -568,7 +568,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
@@ -662,7 +662,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
@@ -676,13 +676,33 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       // notifying home bloc to reload when a receipt is renamed
       homeBloc.add(HomeLoadReceiptsEvent());
       
-      fetchFilesInFolderSortedBy(receipt.parentId);
+      int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
+
+      // Check if the receipt is found in the cached list
+      if (index != -1) {
+        // Update the name of the receipt in the cached list
+        Receipt updatedReceipt = Receipt(
+          id: receipt.id,
+          name: newName,
+          fileName: receipt.fileName,
+          dateCreated: receipt.dateCreated,
+          lastModified: receipt.lastModified,
+          storageSize: receipt.storageSize,
+          parentId: receipt.parentId,
+        );
+        // updating cache
+        cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
+        // emitting cache
+        retrieveCachedItems();
+      } else {
+        throw Exception('Unexpcted error: ${receipt.name} not found in cache');
+      }
 
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewRenameFailure(
           oldName: receipt.name, newName: newName, folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
     }
   }
 
@@ -760,6 +780,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewUpdateDateFailure(folderId: receipt.parentId));
+      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
     }
 
 
