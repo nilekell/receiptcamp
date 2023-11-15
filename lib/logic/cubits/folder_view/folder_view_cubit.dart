@@ -16,6 +16,7 @@ import 'package:receiptcamp/data/utils/file_helper.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/logic/blocs/home/home_bloc.dart';
+import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
 import 'package:receiptcamp/models/folder.dart';
 import 'package:receiptcamp/models/receipt.dart';
 import 'package:receiptcamp/models/tag.dart';
@@ -27,10 +28,11 @@ part 'folder_view_state.dart';
 class FolderViewCubit extends Cubit<FolderViewState> {
 
   final HomeBloc homeBloc;
+  final FileExplorerCubit fileExplorerCubit;
   final PreferencesService prefs; 
   List<dynamic> cachedCurrentlyDisplayedFiles = [];
 
-  FolderViewCubit({required this.homeBloc, required this.prefs}) : super(FolderViewInitial());
+  FolderViewCubit({required this.homeBloc, required this.prefs, required this.fileExplorerCubit}) : super(FolderViewInitial());
 
   // init folderview
   initFolderView() {
