@@ -15,6 +15,7 @@ import 'package:receiptcamp/logic/blocs/search/search_bloc.dart';
 import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
 import 'package:receiptcamp/logic/cubits/folder_view/folder_view_cubit.dart';
 import 'package:receiptcamp/logic/cubits/landing/landing_cubit.dart';
+import 'package:receiptcamp/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:receiptcamp/logic/cubits/settings/settings_cubit.dart';
 import 'package:receiptcamp/logic/cubits/sharing_intent/sharing_intent_cubit.dart';
 import 'package:receiptcamp/presentation/screens/landing_screen.dart';
@@ -44,6 +45,9 @@ void main() async {
     providers: [
       BlocProvider(
         create: (context) => SettingsCubit()..init(),
+      ),
+      BlocProvider(
+        create: (context) => OnboardingCubit()..init(),
       ),
       BlocProvider<LandingCubit>(
           create: (BuildContext context) => LandingCubit()),
@@ -84,6 +88,9 @@ void main() async {
     providers: [
       BlocProvider(
         create: (context) => SettingsCubit()..init(),
+      ),
+      BlocProvider(
+        create: (context) => OnboardingCubit()..init(),
       ),
       BlocProvider<LandingCubit>(
           create: (BuildContext context) => LandingCubit()),

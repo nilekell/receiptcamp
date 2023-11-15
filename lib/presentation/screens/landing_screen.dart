@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:receiptcamp/extensions/user_status_handler.dart';
 import 'package:receiptcamp/logic/cubits/landing/landing_cubit.dart';
+import 'package:receiptcamp/logic/cubits/onboarding/onboarding_cubit.dart';
 import 'package:receiptcamp/logic/cubits/sharing_intent/sharing_intent_cubit.dart';
 import 'package:receiptcamp/presentation/screens/file_explorer.dart';
 import 'package:receiptcamp/presentation/screens/home.dart';
 import 'package:receiptcamp/presentation/screens/import_screen.dart';
+import 'package:receiptcamp/presentation/screens/onboarding.dart';
 import 'package:receiptcamp/presentation/screens/recieve_receipts_screen.dart';
 import 'package:receiptcamp/presentation/ui/landing/app_bar.dart';
 import 'package:receiptcamp/presentation/ui/landing/drawer.dart';
@@ -41,47 +43,58 @@ class _LandingScreenState extends State<LandingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: const AppDrawer(),
-      appBar: HomeAppBar(),
-      body: BlocListener<SharingIntentCubit, SharingIntentState>(
-        listener: (context, state) {
-          switch (state) {
-            case SharingIntentFilesRecieved():
-              final sharedFiles = state.files;
-              Navigator.of(context).push(SlidingReceiveReceiptTransitionRoute(
-                  receiptFiles: sharedFiles));
-            case SharingIntentZipFileReceived():
-              context.handleUserStatus((BuildContext context) {
-                final zipFile = state.zipFile;
-              Navigator.of(context).push(SlidingImportTransitionRoute(
-                  zipFile: zipFile));
-              });
-            default:
-              return;
-          }
-        },
-        child: FadeTransition(
-          opacity: _controller,
-          child: BlocBuilder<LandingCubit, int>(
+    return BlocBuilder<OnboardingCubit, OnboardingState>(
+      builder: (context, state) {
+        if (state is OnboardingShowScreen) {
+          return Scaffold(
+            body: OnboardingView(),
+          );
+        } else {
+          return Scaffold(
+          drawer: const AppDrawer(),
+          appBar: HomeAppBar(),
+          body: BlocListener<SharingIntentCubit, SharingIntentState>(
+            listener: (context, state) {
+              switch (state) {
+                case SharingIntentFilesRecieved():
+                  final sharedFiles = state.files;
+                  Navigator.of(context).push(
+                      SlidingReceiveReceiptTransitionRoute(
+                          receiptFiles: sharedFiles));
+                case SharingIntentZipFileReceived():
+                  context.handleUserStatus((BuildContext context) {
+                    final zipFile = state.zipFile;
+                    Navigator.of(context)
+                        .push(SlidingImportTransitionRoute(zipFile: zipFile));
+                  });
+                default:
+                  return;
+              }
+            },
+            child: FadeTransition(
+              opacity: _controller,
+              child: BlocBuilder<LandingCubit, int>(
+                builder: (context, state) {
+                  _controller.forward(from: 0.0);
+                  return IndexedStack(
+                    index: state,
+                    children: const [
+                      Home(),
+                      FileExplorer(),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+          bottomNavigationBar: BlocBuilder<LandingCubit, int>(
             builder: (context, state) {
-              _controller.forward(from: 0.0); // Trigger the animation
-              return IndexedStack(
-                index: state,
-                children: const [
-                  Home(),
-                  FileExplorer(),
-                ],
-              );
+              return bottomNavigationBar(state, context);
             },
           ),
-        ),
-      ),
-      bottomNavigationBar: BlocBuilder<LandingCubit, int>(
-        builder: (context, state) {
-          return bottomNavigationBar(state, context);
-        },
-      ),
+        );
+        }
+      },
     );
   }
 }
