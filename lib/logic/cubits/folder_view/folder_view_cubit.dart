@@ -370,7 +370,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             updatedReceipt =
                 ReceiptWithPrice(receipt: updatedReceipt, priceString: receipt.priceString, priceDouble: receipt.priceDouble);
           case ReceiptWithSize():
-            updatedReceipt = ReceiptWithSize(withSize: true, receipt: updatedReceipt);
+            updatedReceipt = ReceiptWithSize(withSize: receipt.withSize, receipt: updatedReceipt);
           default:
             break;
         }
@@ -669,42 +669,54 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // rename receipt
   renameReceipt(Receipt receipt, String newName) async {
     try {
-      await DatabaseRepository.instance.renameReceipt(receipt.id, newName);
-      emit(FolderViewRenameSuccess(
-          oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+        int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
 
-      // notifying home bloc to reload when a receipt is renamed
-      homeBloc.add(HomeLoadReceiptsEvent());
-      
-      int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
-
-      // Check if the receipt is found in the cached list
-      if (index != -1) {
-        // Update the name of the receipt in the cached list
-        Receipt updatedReceipt = Receipt(
-          id: receipt.id,
-          name: newName,
-          fileName: receipt.fileName,
-          dateCreated: receipt.dateCreated,
-          lastModified: receipt.lastModified,
-          storageSize: receipt.storageSize,
-          parentId: receipt.parentId,
+        dynamic updatedReceipt = Receipt(
+            id: receipt.id,
+            name: newName,
+            fileName: receipt.fileName,
+            dateCreated: receipt.dateCreated,
+            lastModified: Utility.getCurrentTime(),
+            parentId: receipt.parentId,
+            storageSize: receipt.storageSize
         );
-        // updating cache
-        cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
-        // emitting cache
-        retrieveCachedItems();
-      } else {
-        throw Exception('Unexpcted error: ${receipt.name} not found in cache');
-      }
 
+        // Check if the receipt is found in the cached list
+        if (index != -1) {
+            // getting receipt type
+            switch (receipt) {
+                case ReceiptWithPrice():
+                    updatedReceipt = ReceiptWithPrice(priceString: receipt.priceString, priceDouble: receipt.priceDouble, receipt: updatedReceipt);
+                case ReceiptWithSize():
+                    updatedReceipt = ReceiptWithSize(
+                        withSize: receipt.withSize, receipt: updatedReceipt);
+                default:
+                    break;
+            }
+
+            // updating cache
+            cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
+
+            emit(FolderViewRenameSuccess(
+                oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+
+            // emitting cache
+            retrieveCachedItems();
+
+            // updating db
+            DatabaseRepository.instance.updateReceipt(updatedReceipt);
+
+        } else {
+            throw Exception('Unexpected error: ${receipt.name} not found in cache');
+        }
     } on Exception catch (e) {
-      print(e.toString());
-      emit(FolderViewRenameFailure(
-          oldName: receipt.name, newName: newName, folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
+        print(e.toString());
+        emit(FolderViewRenameFailure(
+            oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+        fetchFilesInFolderSortedBy(receipt.parentId);
     }
-  }
+}
+
 
   generateZipFile(Folder folder, bool withPdfs) async {
 
