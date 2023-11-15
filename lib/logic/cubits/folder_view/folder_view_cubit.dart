@@ -188,7 +188,10 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           oldName: folder.name,
           newName: targetFolderName,
           folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId);
+      
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Folder && element.id == folder.id);
+      retrieveCachedItems();
+
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
@@ -212,7 +215,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       // notifying home bloc to reload when a folder is deleted
       homeBloc.add(HomeLoadReceiptsEvent());
       
-      fetchFilesInFolderSortedBy(deletedFolder.parentId);
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Folder && element.id == folderId);
+      retrieveCachedItems();
 
     } on Exception catch (e) {
       print(e.toString());
@@ -274,7 +278,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           oldName: receipt.name,
           newName: targetFolderName,
           folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId);
+      
+
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receipt.id);
+      retrieveCachedItems();
+
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
@@ -285,7 +293,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     }
   }
 
-// delete receipt
+  // delete receipt
   deleteReceipt(String receiptId) async {
     final Receipt deletedReceipt =
         await DatabaseRepository.instance.getReceiptById(receiptId);
@@ -297,7 +305,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       // notifying home bloc to reload when a receipt is deleted
       homeBloc.add(HomeLoadReceiptsEvent());
 
-      fetchFilesInFolderSortedBy(deletedReceipt.parentId);
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receiptId);
+      retrieveCachedItems();
 
     } on Exception catch (e) {
       print(e.toString());
