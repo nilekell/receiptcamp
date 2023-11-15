@@ -41,6 +41,10 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     fetchFilesInFolderSortedBy(rootFolderId, column: prefs.getLastColumn(), order: prefs.getLastOrder());
   }
 
+  retrieveCachedItems() async {
+    emit(FolderViewLoadedSuccess(files: cachedCurrentlyDisplayedFiles, folder: fileExplorerCubit.currentlyDisplayedFolder!, orderedBy: prefs.getLastColumn(), order: prefs.getLastOrder()));
+  }
+
   // get folder files
   fetchFilesInFolderSortedBy(String folderId, {String? column, String? order, bool userSelectedSort = false, bool useCachedFiles = false}) async {
     emit(FolderViewLoading());
