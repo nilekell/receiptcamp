@@ -253,13 +253,46 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     }
   }
 
-// rename folder
+  // rename folder
   renameFolder(Folder folder, String newName) async {
     try {
-      await DatabaseRepository.instance.renameFolder(folder.id, newName);
-      emit(FolderViewRenameSuccess(
-          oldName: folder.name, newName: newName, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId);
+      int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Folder && element.id == folder.id);
+
+      dynamic updatedFolder = Folder(
+        id: folder.id,
+        name: newName,
+        lastModified: Utility.getCurrentTime(),
+        parentId: folder.parentId,
+      );
+
+      // Check if the folder is found in the cached list
+      if (index != -1) {
+        // getting folder type
+        switch (folder) {
+          case FolderWithPrice():
+            updatedFolder = FolderWithPrice(price: folder.price, folder: updatedFolder);
+          case FolderWithSize():
+            updatedFolder = FolderWithSize(
+              storageSize: folder.storageSize, folder: updatedFolder);
+          default:
+          break;
+        }
+        
+        // updating cache
+        cachedCurrentlyDisplayedFiles[index] = updatedFolder;
+
+        emit(FolderViewRenameSuccess(
+        oldName: folder.name, newName: newName, folderId: folder.parentId));
+
+        // emitting cache
+        retrieveCachedItems();
+        
+        // updating db
+        DatabaseRepository.instance.updateFolder(updatedFolder);
+
+      } else {
+        throw Exception('Unexpected error: ${folder.name} not found in cache');
+      }
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewRenameFailure(
