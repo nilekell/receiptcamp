@@ -340,25 +340,62 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 // move receipt
   moveReceipt(Receipt receipt, String targetFolderId) async {
     final String targetFolderName =
-        (await DatabaseRepository.instance.getFolderById(targetFolderId)).name;
+      (await DatabaseRepository.instance.getFolderById(targetFolderId))
+          .name;
+
     try {
-      await DatabaseRepository.instance.moveReceipt(receipt, targetFolderId);
-      emit(FolderViewMoveSuccess(
-          oldName: receipt.name,
-          newName: targetFolderName,
-          folderId: receipt.parentId));
+      // Check if the receipt is found in the cached list
+      int index = cachedCurrentlyDisplayedFiles.indexWhere(
+          (element) => element is Receipt && element.id == receipt.id);
+
+      // updating cache
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Receipt && element.id == receipt.id);
+
+      // Update the parentId of the receipt in the cached list
+      dynamic updatedReceipt = Receipt(
+        id: receipt.id,
+        name: receipt.name,
+        lastModified: Utility.getCurrentTime(),
+        parentId: targetFolderId,
+        fileName: receipt.fileName,
+        dateCreated: receipt.dateCreated,
+        storageSize: receipt.storageSize,
+      );
+
+      if (index != -1) {
+        // getting folder type
+        switch (receipt) {
+          case ReceiptWithPrice():
+            updatedReceipt =
+                ReceiptWithPrice(receipt: updatedReceipt, priceString: receipt.priceString, priceDouble: receipt.priceDouble);
+          case ReceiptWithSize():
+            updatedReceipt = ReceiptWithSize(withSize: true, receipt: updatedReceipt);
+          default:
+            break;
+        }
+
+        emit(FolderViewMoveSuccess(
+            oldName: receipt.name,
+            newName: targetFolderName,
+            folderId: receipt.parentId));
+
+        // emitting cache
+        retrieveCachedItems();
+
+        // updating db
+        DatabaseRepository.instance.updateReceipt(updatedReceipt);
+      } else {
+        throw Exception('Unexpected error: ${receipt.name} not found in cache');
+      }
       
-
-      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receipt.id);
-      retrieveCachedItems();
-
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: receipt.name,
           newName: targetFolderName,
           folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(receipt.parentId);
     }
   }
 
