@@ -801,7 +801,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             // updating cache
             cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
 
-            emit(FolderViewUpdateDateSuccess(folderId: receipt.parentId));
+            emit(FolderViewUpdateDateSuccess(receiptName: receipt.name, folderId: receipt.parentId, oldTimestamp: receipt.lastModified, newTimestamp: newTimestamp));
 
             // emitting cache
             retrieveCachedItems();
