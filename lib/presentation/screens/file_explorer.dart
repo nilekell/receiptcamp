@@ -358,53 +358,33 @@ class _RefreshableFolderViewState extends State<RefreshableFolderView> {
 
   Widget _buildItem(FolderViewLoadedSuccess state, int index) {
     var item = state.files[index];
-    if (item is Receipt) {
-      if (item is ReceiptWithSize) {
-        return SizedBox(
-            height: 60,
-            child: ReceiptListTile(
-              receipt: item,
-              withSize: true,
-            ));
-      } 
-      if (item is ReceiptWithPrice) {
-        return SizedBox(
-            height: 60,
-            child: ReceiptListTile(
-              receipt: item,
-              price: item.priceString,
-            ));
-      }
-      else {
-        return SizedBox(
-            height: 60,
-            child: ReceiptListTile(receipt: item));
-      }
-    } else if (item is Folder) {
-      if (item is FolderWithSize) {
-        return SizedBox(
-            height: 60,
-            child: FolderListTile(
-              folder: item,
-              storageSize: item.storageSize,
-            ));
-      } 
-      if (item is FolderWithPrice) {
-        return SizedBox(
-            height: 60,
-            child: FolderListTile(
-              folder: item,
-              price: item.price,
-            ));
-      }
-      else {
-        return SizedBox(
-            height: 60,
-            child: FolderListTile(folder: item));
-      }
-    } else {
-      return const ListTile(
-          title: Text('Unknown file type'));
+    switch (item) {
+      case ReceiptWithSize receiptWithSize:
+        return ReceiptListTile(
+          receipt: receiptWithSize,
+          withSize: true,
+        );
+      case ReceiptWithPrice receiptWithPrice:
+        return ReceiptListTile(
+          receipt: receiptWithPrice,
+          price: receiptWithPrice.priceString,
+        );
+      case Receipt receipt:
+        return ReceiptListTile(receipt: receipt);
+      case FolderWithSize folderWithSize:
+        return FolderListTile(
+          folder: folderWithSize,
+          storageSize: folderWithSize.storageSize,
+        );
+      case FolderWithPrice folderWithPrice:
+        return FolderListTile(
+          folder: folderWithPrice,
+          price: folderWithPrice.price,
+        );
+      case Folder folder:
+        return FolderListTile(folder: folder);
+      default:
+        return const ListTile(title: Text('Unknown file type'));
     }
   }
   
