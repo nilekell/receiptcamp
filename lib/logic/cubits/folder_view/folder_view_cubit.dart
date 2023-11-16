@@ -150,11 +150,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         break;
       case 'lastModified':
         folders = FolderHelper.sortFoldersByLastModified(folders, lastOrder);
-        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
+        receipts = ReceiptService.sortReceiptsByLastModified(receipts, lastOrder);
         break;
       case 'name':
         folders = FolderHelper.sortFoldersByName(folders, lastOrder);
-        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
+        receipts = ReceiptService.sortReceiptsByName(receipts, lastOrder);
         break;
     }
 
