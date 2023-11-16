@@ -416,7 +416,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     }
   }
 
-// move receipt
+  // move receipt
   moveReceipt(Receipt receipt, String targetFolderId) async {
     final String targetFolderName =
       (await _dbRepo.getFolderById(targetFolderId))
@@ -557,7 +557,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await _dbRepo.insertTags(tags);
+        _dbRepo.insertTags(tags);
         await _dbRepo.insertReceipt(receipt);
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
@@ -634,7 +634,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
 
-      await _dbRepo.insertTags(tags);
+      _dbRepo.insertTags(tags);
       await _dbRepo.insertReceipt(receipt);
       print('Image ${receipt.name} saved at ${receipt.localPath}');
 
@@ -708,7 +708,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await _dbRepo.insertTags(tags);
+        _dbRepo.insertTags(tags);
         await _dbRepo.insertReceipt(receipt);
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
@@ -785,7 +785,9 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             retrieveCachedItems();
 
             // updating db
-            _dbRepo.updateReceipt(updatedReceipt);
+            await _dbRepo.updateReceipt(updatedReceipt);
+
+            homeBloc.add(HomeLoadReceiptsEvent());
 
         } else {
             throw Exception('Unexpected error: ${receipt.name} not found in cache');
@@ -888,7 +890,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             retrieveCachedItems();
 
             // updating db
-            _dbRepo.updateReceipt(updatedReceipt);
+            await _dbRepo.updateReceipt(updatedReceipt);
 
             // notifying home bloc to reload
             homeBloc.add(HomeLoadReceiptsEvent());
