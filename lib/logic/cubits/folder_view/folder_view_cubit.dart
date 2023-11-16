@@ -15,6 +15,7 @@ import 'package:receiptcamp/data/services/preferences.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
 import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
+import 'package:receiptcamp/data/utils/text_recognition.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/logic/blocs/home/home_bloc.dart';
 import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
@@ -516,7 +517,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     }
   }
 
-// upload receipt
+  // upload receipt
   uploadReceiptFromGallery(String currentFolderId) async {
     // Requesting photos permission if not granted
     if (!PermissionsService.instance.hasPhotosAccess) {
@@ -632,6 +633,10 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
       bool validImage;
 
+      // emit(FolderViewLoading());
+      // not emitting loading state as ReceiptService.isValidImage()
+      // won't take long to complete for just a single image
+
       (validImage, invalidImageReason) =
           await ReceiptService.isValidImage(receiptPhoto.path);
       if (!validImage) {
@@ -647,17 +652,37 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
 
-      _dbRepo.insertTags(tags);
-      await _dbRepo.insertReceipt(receipt);
-      print('Image ${receipt.name} saved at ${receipt.localPath}');
+      final lastColumn = prefs.getLastColumn();
+      final lastOrder = prefs.getLastOrder();
+
+      dynamic customReceipt;
+
+      switch (lastColumn) {
+        case 'price':
+          final priceString = await TextRecognitionService.extractPriceFromImage(receipt.localPath);
+          final priceDouble = await TextRecognitionService.extractCostFromPriceString(priceString);
+          customReceipt = ReceiptWithPrice(receipt: receipt, priceDouble: priceDouble, priceString: priceString);
+          cachedCurrentlyDisplayedFiles.add(customReceipt);
+        case 'storageSize':
+          customReceipt = ReceiptWithSize(withSize: true, receipt: receipt);
+          cachedCurrentlyDisplayedFiles.add(customReceipt);
+        case 'lastModified':
+        case 'name':
+          customReceipt = receipt;
+          cachedCurrentlyDisplayedFiles.add(customReceipt);
+      }
 
       emit(FolderViewUploadSuccess(
-          uploadedName: receipt.name, folderId: receipt.parentId));
+        uploadedName: receipt.name, folderId: receipt.parentId));
+
+      updateDisplayFilesWithCache();
+      retrieveCachedItems();
+
+      _dbRepo.insertTags(tags);
+      await _dbRepo.insertReceipt(customReceipt);
 
       // notifying home bloc to reload when a receipt is uploaded from camera
       homeBloc.add(HomeLoadReceiptsEvent());
-      
-      fetchFilesInFolderSortedBy(receipt.parentId);
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
