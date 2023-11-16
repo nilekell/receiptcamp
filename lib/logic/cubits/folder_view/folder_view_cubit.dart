@@ -283,17 +283,20 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     final Folder deletedFolder =
         await DatabaseRepository.instance.getFolderById(folderId);
     try {
-      await DatabaseRepository.instance.deleteFolder(folderId);
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Folder && element.id == folderId);
+
       emit(FolderViewDeleteSuccess(
           deletedName: deletedFolder.name, folderId: deletedFolder.parentId));
 
-      
-      // notifying home bloc to reload when a folder is deleted
-      homeBloc.add(HomeLoadReceiptsEvent());
-      
-      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Folder && element.id == folderId);
       retrieveCachedItems();
 
+      DatabaseRepository.instance.deleteFolder(folderId);
+
+      // notifying home bloc to reload when a folder is deleted
+      // as this could mean some nested receipts are deleted
+      homeBloc.add(HomeLoadReceiptsEvent());
+      
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewDeleteFailure(
