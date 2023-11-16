@@ -147,6 +147,35 @@ class ReceiptService {
     }
   }
 
+  static Future<dynamic> createTypedReceiptFromColumn(
+      Receipt receipt, String lastColumn, String lastOrder) async {
+    dynamic typedReceipt;
+
+    switch (lastColumn) {
+      case 'price':
+        final priceString = await TextRecognitionService.extractPriceFromImage(
+            receipt.localPath);
+        final priceDouble =
+            await TextRecognitionService.extractCostFromPriceString(
+                priceString);
+        typedReceipt = ReceiptWithPrice(
+            receipt: receipt,
+            priceDouble: priceDouble,
+            priceString: priceString);
+        break;
+      case 'storageSize':
+        typedReceipt = ReceiptWithSize(withSize: true, receipt: receipt);
+        break;
+      case 'lastModified':
+      case 'name':
+        typedReceipt = receipt;
+        break;
+    }
+
+    return typedReceipt;
+  }
+
+
   static List<ReceiptWithPrice> sortReceiptsByTotalCost(
       List<Receipt> receipts, String order) {
     print(receipts.length);

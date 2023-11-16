@@ -15,7 +15,6 @@ import 'package:receiptcamp/data/services/preferences.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
 import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
-import 'package:receiptcamp/data/utils/text_recognition.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/logic/blocs/home/home_bloc.dart';
 import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
@@ -653,26 +652,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
               receiptPhoto, currentFolderId);
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
-
-      final lastColumn = prefs.getLastColumn();
-      final lastOrder = prefs.getLastOrder();
-
-      dynamic customReceipt;
-
-      switch (lastColumn) {
-        case 'price':
-          final priceString = await TextRecognitionService.extractPriceFromImage(receipt.localPath);
-          final priceDouble = await TextRecognitionService.extractCostFromPriceString(priceString);
-          customReceipt = ReceiptWithPrice(receipt: receipt, priceDouble: priceDouble, priceString: priceString);
-          cachedCurrentlyDisplayedFiles.add(customReceipt);
-        case 'storageSize':
-          customReceipt = ReceiptWithSize(withSize: true, receipt: receipt);
-          cachedCurrentlyDisplayedFiles.add(customReceipt);
-        case 'lastModified':
-        case 'name':
-          customReceipt = receipt;
-          cachedCurrentlyDisplayedFiles.add(customReceipt);
-      }
+      dynamic typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+      cachedCurrentlyDisplayedFiles.add(typedReceipt);
 
       emit(FolderViewUploadSuccess(
         uploadedName: receipt.name, folderId: receipt.parentId));
@@ -681,7 +662,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       updateDisplayFilesWithCache();
 
       _dbRepo.insertTags(tags);
-      await _dbRepo.insertReceipt(customReceipt);
+      await _dbRepo.insertReceipt(typedReceipt);
 
       // notifying home bloc to reload when a receipt is uploaded from camera
       homeBloc.add(HomeLoadReceiptsEvent());
