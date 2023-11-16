@@ -341,25 +341,13 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         case 'price':
           customFolder = FolderWithPrice(price: '--', folder: folder);
           cachedCurrentlyDisplayedFiles.add(customFolder);
-          switch (lastOrder) {
-            case 'ASC':
-            case 'DESC':
-          }
         case 'storageSize':
           customFolder = FolderWithSize(storageSize: 0, folder: folder);
           cachedCurrentlyDisplayedFiles.add(customFolder);
-          switch (lastOrder) {
-            case 'ASC':
-            case 'DESC':
-          }
         case 'lastModified':
         case 'name':
           customFolder = folder;
           cachedCurrentlyDisplayedFiles.add(customFolder);
-          switch (lastOrder) {
-            case 'ASC':
-            case 'DESC':
-          }
       }
 
       updateDisplayFilesWithCache();
