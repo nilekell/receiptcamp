@@ -46,10 +46,6 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     fetchFilesInFolderSortedBy(rootFolderId, column: prefs.getLastColumn(), order: prefs.getLastOrder());
   }
 
-  retrieveCachedItems() async {
-    emit(FolderViewLoadedSuccess(files: cachedCurrentlyDisplayedFiles, folder: fileExplorerCubit.currentlyDisplayedFolder!, orderedBy: prefs.getLastColumn(), order: prefs.getLastOrder()));
-  }
-
   // get folder files
   fetchFilesInFolderSortedBy(String folderId, {String? column, String? order, bool userSelectedSort = false, bool useCachedFiles = false}) async {
     emit(FolderViewLoading());
@@ -168,6 +164,12 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       ..clear()
       ..addAll(folders)
       ..addAll(receipts);
+
+    emit(FolderViewLoadedSuccess(
+        files: cachedCurrentlyDisplayedFiles,
+        folder: fileExplorerCubit.currentlyDisplayedFolder!,
+        orderedBy: prefs.getLastColumn(),
+        order: prefs.getLastOrder()));
   }
 
   moveMultipleItems(List<Object> items, String destinationFolderId) async {
@@ -278,7 +280,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             folderId: folder.parentId));
 
         // emitting cache
-        retrieveCachedItems();
+        updateDisplayFilesWithCache();
 
         // updating db
         _dbRepo.updateFolder(updatedFolder);
@@ -307,7 +309,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       emit(FolderViewDeleteSuccess(
           deletedName: deletedFolder.name, folderId: deletedFolder.parentId));
 
-      retrieveCachedItems();
+      updateDisplayFilesWithCache();
 
       _dbRepo.deleteFolder(folderId);
 
@@ -360,7 +362,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       emit(FolderViewUploadSuccess(
           uploadedName: folder.name, folderId: folder.parentId));
 
-      retrieveCachedItems();
+      updateDisplayFilesWithCache();
 
       // save folder
       _dbRepo.insertFolder(folder);
@@ -404,7 +406,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         oldName: folder.name, newName: newName, folderId: folder.parentId));
 
         // emitting cache
-        retrieveCachedItems();
+        updateDisplayFilesWithCache();
         
         // updating db
         _dbRepo.updateFolder(updatedFolder);
@@ -474,7 +476,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             folderId: receipt.parentId));
 
         // emitting cache
-        retrieveCachedItems();
+        updateDisplayFilesWithCache();
 
         // updating db
         _dbRepo.updateReceipt(updatedReceipt);
@@ -502,7 +504,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       emit(FolderViewDeleteSuccess(
           deletedName: deletedReceipt.name, folderId: deletedReceipt.parentId));
 
-      retrieveCachedItems();
+      updateDisplayFilesWithCache();
 
       await _dbRepo.deleteReceipt(receiptId);
 
@@ -676,7 +678,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         uploadedName: receipt.name, folderId: receipt.parentId));
 
       updateDisplayFilesWithCache();
-      retrieveCachedItems();
+      updateDisplayFilesWithCache();
 
       _dbRepo.insertTags(tags);
       await _dbRepo.insertReceipt(customReceipt);
@@ -820,7 +822,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
                 oldName: receipt.name, newName: newName, folderId: receipt.parentId));
 
             // emitting cache
-            retrieveCachedItems();
+            updateDisplayFilesWithCache();
 
             // updating db
             await _dbRepo.updateReceipt(updatedReceipt);
@@ -925,7 +927,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             emit(FolderViewUpdateDateSuccess(receiptName: receipt.name, folderId: receipt.parentId, oldTimestamp: receipt.lastModified, newTimestamp: newTimestamp));
 
             // emitting cache
-            retrieveCachedItems();
+            updateDisplayFilesWithCache();
 
             // updating db
             await _dbRepo.updateReceipt(updatedReceipt);
