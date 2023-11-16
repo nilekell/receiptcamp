@@ -1,5 +1,6 @@
 import 'package:receiptcamp/data/data_constants.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
+import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/text_recognition.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/models/folder.dart';
@@ -252,26 +253,7 @@ class DatabaseService {
     }
 
     // Step 13: Sort the folders by total cost
-    foldersWithCost.sort((a, b) {
-      // Define a pattern to remove non-numeric characters (assuming currency symbols and commas)
-      final pattern = RegExp(r'[^\d.]');
-      // Remove currency symbols and other non-numeric characters from the price strings
-      String aPrice = a.price.replaceAll(pattern, '');
-      String bPrice = b.price.replaceAll(pattern, '');
-      // Handle cases where price is '--' or any non-numeric string
-      double aPriceDouble =
-          aPrice == '--' ? 0.0 : double.tryParse(aPrice) ?? 0.0;
-      double bPriceDouble =
-          bPrice == '--' ? 0.0 : double.tryParse(bPrice) ?? 0.0;
-
-      if (order == 'ASC') {
-        return aPriceDouble.compareTo(bPriceDouble);
-      } else if (order == 'DESC') {
-        return bPriceDouble.compareTo(aPriceDouble);
-      } else {
-        return 0; // Do not sort if the order parameter is invalid
-      }
-    });
+    foldersWithCost = FolderHelper.sortFoldersByTotalCost(foldersWithCost, order);
 
   // Step 14: Return the immediate subfolders with their prices
   return foldersWithCost;
@@ -352,7 +334,7 @@ Future<double> calculateSubFoldersCost(String folderId) async {
   Future<List<FolderWithSize>> getFoldersByTotalReceiptSize(
       String parentId, String order) async {
     final db = await database;
-    final List<FolderWithSize> foldersWithSizes = [];
+    List<FolderWithSize> foldersWithSizes = [];
 
     Future<int> getFolderSize(String folderId) async {
       int folderSize = 0;
@@ -385,13 +367,7 @@ Future<double> calculateSubFoldersCost(String folderId) async {
           .add(FolderWithSize(storageSize: storageSize, folder: folder));
     }
 
-    foldersWithSizes.sort((a, b) {
-      if (order.toUpperCase() == 'ASC') {
-        return a.storageSize.compareTo(b.storageSize);
-      } else {
-        return b.storageSize.compareTo(a.storageSize);
-      }
-    });
+    foldersWithSizes = FolderHelper.sortFoldersBySize(foldersWithSizes, order);
 
     return foldersWithSizes;
   }
