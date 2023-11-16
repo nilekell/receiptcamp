@@ -146,15 +146,19 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     switch (lastColumn) {
       case 'price':
           folders = FolderHelper.sortFoldersByTotalCost(folders, lastOrder);
+          receipts = ReceiptService.sortReceiptsByTotalCost(receipts, lastOrder);
         break;
       case 'storageSize':
         folders = FolderHelper.sortFoldersBySize(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
         break;
       case 'lastModified':
         folders = FolderHelper.sortFoldersByLastModified(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
         break;
       case 'name':
         folders = FolderHelper.sortFoldersByName(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
         break;
     }
 
