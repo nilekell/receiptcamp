@@ -13,6 +13,7 @@ import 'package:receiptcamp/data/services/isolate.dart';
 import 'package:receiptcamp/data/services/permissons.dart';
 import 'package:receiptcamp/data/services/preferences.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
+import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/logic/blocs/home/home_bloc.dart';
@@ -120,6 +121,45 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // determines if the last selected order and column is the same as the next selected order and column
   bool _isSameSort(String currentOrder, currentColumn) {
     return currentOrder == prefs.getLastOrder() && currentColumn == prefs.getLastColumn();
+  }
+
+  updateDisplayFiles() {
+    // Separate folders and receipts
+    List<Folder> folders = [];
+    List<Receipt> receipts = [];
+
+    for (var item in cachedCurrentlyDisplayedFiles) {
+      if (item is Folder) {
+        folders.add(item);
+      } else if (item is Receipt) {
+        receipts.add(item);
+      }
+    }
+
+    final lastColumn = prefs.getLastColumn();
+    final lastOrder = prefs.getLastOrder();
+
+    // Sort the folders based on the lastColumn and lastOrder
+    switch (lastColumn) {
+      case 'price':
+          folders = FolderHelper.sortFoldersByTotalCost(folders, lastOrder);
+        break;
+      case 'storageSize':
+        folders = FolderHelper.sortFoldersBySize(folders, lastOrder);
+        break;
+      case 'lastModified':
+        folders = FolderHelper.sortFoldersByLastModified(folders, lastOrder);
+        break;
+      case 'name':
+        folders = FolderHelper.sortFoldersByName(folders, lastOrder);
+        break;
+    }
+
+    // Reassemble cachedCurrentlyDisplayedFiles with sorted folders followed by receipts
+    cachedCurrentlyDisplayedFiles
+      ..clear()
+      ..addAll(folders)
+      ..addAll(receipts);
   }
 
   moveMultipleItems(List<Object> items, String destinationFolderId) async {
@@ -276,12 +316,46 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           lastModified: currentTime,
           parentId: parentFolderId);
 
-      // save folder
-      DatabaseRepository.instance.insertFolder(folder);
+      final lastColumn = prefs.getLastColumn();
+      final lastOrder = prefs.getLastOrder();
+
+      dynamic customFolder;
+
+      switch (lastColumn) {
+        case 'price':
+          customFolder = FolderWithPrice(price: '--', folder: folder);
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+          switch (lastOrder) {
+            case 'ASC':
+            case 'DESC':
+          }
+        case 'storageSize':
+          customFolder = FolderWithSize(storageSize: 0, folder: folder);
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+          switch (lastOrder) {
+            case 'ASC':
+            case 'DESC':
+          }
+        case 'lastModified':
+        case 'name':
+          customFolder = folder;
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+          switch (lastOrder) {
+            case 'ASC':
+            case 'DESC':
+          }
+      }
+
+      updateDisplayFiles();
 
       emit(FolderViewUploadSuccess(
           uploadedName: folder.name, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(parentFolderId);
+
+      retrieveCachedItems();
+
+      // save folder
+      DatabaseRepository.instance.insertFolder(folder);
+
     } on Exception catch (e) {
       print('Error in uploadFolder: $e');
       emit(FolderViewError());
