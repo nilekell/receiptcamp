@@ -277,4 +277,17 @@ class TextRecognitionService {
 
     return currencySign;
   }
+
+  static Future<double> extractCostFromPriceString(String priceString) async {
+    // Define a pattern to remove non-numeric characters (assuming currency symbols and commas)
+    final pattern = RegExp(r'[^\d.]');
+
+    // Remove non-numeric characters from the price string
+    String numericPriceString = priceString.replaceAll(pattern, '');
+
+    // Try to parse the numeric string to a double
+    double price = double.tryParse(numericPriceString) ?? 0.0;
+
+    return price;
+  }
 }
