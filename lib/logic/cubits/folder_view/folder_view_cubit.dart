@@ -222,9 +222,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   // move folder
   moveFolder(Folder folder, String targetFolderId) async {
-    final String targetFolderName =
-      (await _dbRepo.getFolderById(targetFolderId))
-          .name;
+     final Folder targetFolder =
+      await _dbRepo.getFolderById(targetFolderId);
 
     try {
       // Check if the folder is found in the cached list
@@ -256,9 +255,20 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             break;
         }
 
+        // reload all files in folder when receipt is moved to a folder within the same folder
+        if (targetFolder.parentId == folder.parentId) {
+          await _dbRepo.updateFolder(updatedFolder);
+          emit(FolderViewMoveSuccess(
+            oldName: folder.name,
+            newName: targetFolder.name,
+            folderId: folder.parentId));
+          fetchFilesInFolderSortedBy(folder.parentId);
+          return;
+        }
+
         emit(FolderViewMoveSuccess(
             oldName: folder.name,
-            newName: targetFolderName,
+            newName: targetFolder.name,
             folderId: folder.parentId));
 
         // emitting cache
@@ -274,7 +284,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: folder.name,
-          newName: targetFolderName,
+          newName: targetFolder.name,
           folderId: folder.parentId));
       fetchFilesInFolderSortedBy(folder.parentId);
     }
@@ -418,9 +428,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   // move receipt
   moveReceipt(Receipt receipt, String targetFolderId) async {
-    final String targetFolderName =
-      (await _dbRepo.getFolderById(targetFolderId))
-          .name;
+    final Folder targetFolder =
+      await _dbRepo.getFolderById(targetFolderId);
 
     try {
       // Check if the receipt is found in the cached list
@@ -453,10 +462,21 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           default:
             break;
         }
+        
+        // reload all files in folder when receipt is moved to a folder within the same folder
+        if (targetFolder.parentId == receipt.parentId) {
+          await _dbRepo.updateReceipt(updatedReceipt);
+          emit(FolderViewMoveSuccess(
+            oldName: receipt.name,
+            newName: targetFolder.name,
+            folderId: receipt.parentId));
+          fetchFilesInFolderSortedBy(receipt.parentId);
+          return;
+        }
 
         emit(FolderViewMoveSuccess(
             oldName: receipt.name,
-            newName: targetFolderName,
+            newName: targetFolder.name,
             folderId: receipt.parentId));
 
         // emitting cache
@@ -472,7 +492,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: receipt.name,
-          newName: targetFolderName,
+          newName: targetFolder.name,
           folderId: receipt.parentId));
       fetchFilesInFolderSortedBy(receipt.parentId);
     }
