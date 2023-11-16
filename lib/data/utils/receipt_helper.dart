@@ -147,9 +147,9 @@ class ReceiptService {
     }
   }
 
-  static Future<dynamic> createTypedReceiptFromColumn(
+  static Future<Receipt> createTypedReceiptFromColumn(
       Receipt receipt, String lastColumn, String lastOrder) async {
-    dynamic typedReceipt;
+    Receipt typedReceipt;
 
     switch (lastColumn) {
       case 'price':
@@ -168,8 +168,9 @@ class ReceiptService {
         break;
       case 'lastModified':
       case 'name':
-        typedReceipt = receipt;
-        break;
+        return receipt;
+      default:
+        return receipt;
     }
 
     return typedReceipt;
