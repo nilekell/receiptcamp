@@ -37,6 +37,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   FolderViewCubit({required this.homeBloc, required this.prefs, required this.fileExplorerCubit}) : super(FolderViewInitial());
 
+  // currently unused as initialisation is done by FileExplorerCubit
   // init folderview
   initFolderView() {
     emit(FolderViewInitial());

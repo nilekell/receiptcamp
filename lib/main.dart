@@ -60,7 +60,6 @@ void main() async {
             homeBloc: context.read<HomeBloc>(),
             fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(
@@ -101,7 +100,6 @@ void main() async {
             homeBloc: context.read<HomeBloc>(),
             fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(
