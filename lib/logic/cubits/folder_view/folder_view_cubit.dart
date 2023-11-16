@@ -546,7 +546,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       bool someImagesFailed = false;
       ValidationError invalidImageReason = ValidationError.none;
 
-      const int maxNumOfImagesBeforeDelay = 0;
+      const int maxNumOfImagesBeforeDelay = 1;
 
       if (receiptImages.length > maxNumOfImagesBeforeDelay) {
         // Loading state is shown before any new receipts
@@ -555,6 +555,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       }
 
       List<void Function()> emitQueue = [];
+      List<Future<void> Function()> insertQueue = [];
       final imageCount = receiptImages.length;
 
       for (final image in receiptImages) {
@@ -574,11 +575,13 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        dynamic typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+        Receipt typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
         cachedCurrentlyDisplayedFiles.add(typedReceipt);
 
-        _dbRepo.insertTags(tags);
-        await _dbRepo.insertReceipt(receipt);
+        // scheduling db operations for later
+        insertQueue.add(() => _dbRepo.insertTags(tags));
+        insertQueue.add(() => _dbRepo.insertReceipt(receipt));
+
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -590,6 +593,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           });
         }
       }
+      
+      if (someImagesFailed) {
+        print(invalidImageReason.name);
+        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      }
 
       if (imageCount > maxNumOfImagesBeforeDelay) {
         for (var emitAction in emitQueue) {
@@ -599,15 +607,13 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
       updateDisplayFilesWithCache();
 
-      // notifying home bloc to reload when all receipts uploaded from gallery
-      homeBloc.add(HomeLoadReceiptsEvent());
-
-      if (someImagesFailed) {
-        print(invalidImageReason.name);
-        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      // calling db operations
+      for (var action in insertQueue) {
+        await action();
       }
 
-      fetchFilesInFolderSortedBy(currentFolderId);
+      // notifying home bloc to reload when all receipts uploaded from gallery
+      homeBloc.add(HomeLoadReceiptsEvent());
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
@@ -701,13 +707,14 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         return;
       }
 
-      const int maxNumOfImagesBeforeDelay = 0;
+      const int maxNumOfImagesBeforeDelay = 1;
 
       if (scannedImagePaths.length > maxNumOfImagesBeforeDelay) {
         emit(FolderViewLoading());
       }
 
       List<void Function()> emitQueue = [];
+      List<Future<void> Function()> insertQueue = [];
       final imageCount = scannedImagePaths.length;
 
       bool someImagesFailed = false;
@@ -735,8 +742,14 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        _dbRepo.insertTags(tags);
-        await _dbRepo.insertReceipt(receipt);
+        Receipt typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+        cachedCurrentlyDisplayedFiles.add(typedReceipt);
+        print(cachedCurrentlyDisplayedFiles.length);
+
+        // scheduling db operations for later
+        insertQueue.add(() => _dbRepo.insertTags(tags));
+        insertQueue.add(() => _dbRepo.insertReceipt(receipt));
+
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -750,22 +763,27 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         }
       }
 
+      if (someImagesFailed) {
+        print(invalidImageReason.name);
+        // if a single image fails the validation, show the upload failed
+        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      }
+
       if (imageCount > maxNumOfImagesBeforeDelay) {
           for (var emitAction in emitQueue) {
             emitAction();
           }
         }
 
-      if (someImagesFailed) {
-        print(invalidImageReason.name);
-        // if a single image fails the validation, show the upload failed
-        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      updateDisplayFilesWithCache();
+
+      // calling db operations
+      for (var action in insertQueue) {
+        await action();
       }
       
       // notifying home bloc to reload when a receipt is uploaded from document scan
       homeBloc.add(HomeLoadReceiptsEvent());
-      
-      fetchFilesInFolderSortedBy(currentFolderId);
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
