@@ -481,15 +481,17 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     final Receipt deletedReceipt =
         await DatabaseRepository.instance.getReceiptById(receiptId);
     try {
-      await DatabaseRepository.instance.deleteReceipt(receiptId);
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receiptId);
+
       emit(FolderViewDeleteSuccess(
           deletedName: deletedReceipt.name, folderId: deletedReceipt.parentId));
-      
+
+      retrieveCachedItems();
+
+      await DatabaseRepository.instance.deleteReceipt(receiptId);
+
       // notifying home bloc to reload when a receipt is deleted
       homeBloc.add(HomeLoadReceiptsEvent());
-
-      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receiptId);
-      retrieveCachedItems();
 
     } on Exception catch (e) {
       print(e.toString());
