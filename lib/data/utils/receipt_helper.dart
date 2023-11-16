@@ -120,13 +120,15 @@ class ReceiptService {
     try {
       final validSize = await FileService.isValidImageSize(imagePath);
       final hasText = await TextRecognitionService.imageHasText(imagePath);
+      final hasIntegers = await TextRecognitionService.imageHasPrices(imagePath);
 
       if (validSize == false) validationError = ValidationError.size;
       if (hasText == false) validationError = ValidationError.text;
+      if (hasIntegers == false) validationError = ValidationError.text;
       if (validSize == false && hasText == false) validationError = ValidationError.both;
 
       // only returns true when both booleans are true
-      return (validSize && hasText, validationError);
+      return (validSize && hasText && hasIntegers, validationError);
     } on Exception catch (e) {
       print('Error in ReceiptService.imageHasText: $e');
       return (false, validationError);
