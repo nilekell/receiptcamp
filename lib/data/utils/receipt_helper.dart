@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart';
-import 'package:receiptcamp/data/repositories/database_repository.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
 import 'package:receiptcamp/data/utils/text_recognition.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
@@ -13,10 +12,6 @@ import 'package:receiptcamp/models/tag.dart';
 enum ValidationError {size, text, both, none}
 
 class ReceiptService {
-  // getting singleton db repository instance
-  static final DatabaseRepository databaseRepository =
-      DatabaseRepository.instance;
-
   @visibleForTesting
   static List<Tag> generateTags(List<String> keywords, String receiptId) {
     List<Tag> tags = [];
@@ -150,5 +145,84 @@ class ReceiptService {
       print('Error in validReceiptFileName: $e');
       return false;
     }
+  }
+
+  static List<ReceiptWithPrice> sortReceiptsByTotalCost(
+      List<Receipt> receipts, String order) {
+    print(receipts.length);
+    List<ReceiptWithPrice> receiptsWithCost = receipts
+        .whereType<ReceiptWithPrice>()
+        .map((receipt) => receipt)
+        .toList();
+
+    receiptsWithCost.sort((a, b) {
+      double aPrice = a.priceDouble;
+      double bPrice = b.priceDouble;
+
+      if (order == 'ASC') {
+        return aPrice.compareTo(bPrice);
+      } else if (order == 'DESC') {
+        return bPrice.compareTo(aPrice);
+      } else {
+        return 0;
+      }
+    });
+
+    return receiptsWithCost;
+  }
+
+  static List<ReceiptWithSize> sortReceiptsBySize(
+      List<Receipt> receipts, String order) {
+    List<ReceiptWithSize> receiptsWithSize = receipts
+        .whereType<ReceiptWithSize>()
+        .map((receipt) => receipt)
+        .toList();
+
+    receiptsWithSize.sort((a, b) {
+      int aSize = a.storageSize;
+      int bSize = b.storageSize;
+
+      if (order == 'ASC') {
+        return aSize.compareTo(bSize);
+      } else if (order == 'DESC') {
+        return bSize.compareTo(aSize);
+      } else {
+        return 0;
+      }
+    });
+
+    return receiptsWithSize;
+  }
+
+  static List<Receipt> sortReceiptsByName(
+      List<Receipt> receipts, String order) {
+    receipts.sort((a, b) {
+      int comparisonResult =
+          a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      if (order == 'ASC') {
+        return comparisonResult;
+      } else if (order == 'DESC') {
+        return -comparisonResult;
+      } else {
+        return 0;
+      }
+    });
+
+    return receipts;
+  }
+
+  static List<Receipt> sortReceiptsByLastModified(
+      List<Receipt> receipts, String order) {
+    receipts.sort((a, b) {
+      if (order == 'ASC') {
+        return a.lastModified.compareTo(b.lastModified);
+      } else if (order == 'DESC') {
+        return b.lastModified.compareTo(a.lastModified);
+      } else {
+        return 0;
+      }
+    });
+
+    return receipts;
   }
 }
