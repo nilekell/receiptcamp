@@ -33,6 +33,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   final PreferencesService prefs; 
   List<dynamic> cachedCurrentlyDisplayedFiles = [];
 
+  final DatabaseRepository _dbRepo = DatabaseRepository.instance;
+
   FolderViewCubit({required this.homeBloc, required this.prefs, required this.fileExplorerCubit}) : super(FolderViewInitial());
 
   // init folderview
@@ -59,7 +61,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     final String lastOrder = prefs.getLastOrder();
 
     try {
-      final folder = await DatabaseRepository.instance.getFolderById(folderId);
+      final folder = await _dbRepo.getFolderById(folderId);
 
       // userSelectedSort is only true when the user taps on a tile in order options bottom sheet
       // this distinguishes between the user navigating between folders, sorting in the options sheet, or refreshing the folder view
@@ -78,8 +80,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       }
 
       if (column == 'price') {
-        final List<FolderWithPrice> foldersWithPrice = await DatabaseRepository.instance.getFoldersByPrice(folderId, order);
-        final List<ReceiptWithPrice> receiptsWithPrices = await DatabaseRepository.instance.getReceiptsByPrice(folderId, order);
+        final List<FolderWithPrice> foldersWithPrice = await _dbRepo.getFoldersByPrice(folderId, order);
+        final List<ReceiptWithPrice> receiptsWithPrices = await _dbRepo.getReceiptsByPrice(folderId, order);
         final List<Object> files = [...foldersWithPrice, ...receiptsWithPrices];
         cachedCurrentlyDisplayedFiles = files;
         emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -91,8 +93,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       }
 
       if (column == 'storageSize') {
-        final List<FolderWithSize> foldersWithSize = await DatabaseRepository.instance.getFoldersByTotalReceiptSize(folderId, order);
-        final List<ReceiptWithSize> receiptsWithSize =  await DatabaseRepository.instance.getReceiptsBySize(folderId, order);
+        final List<FolderWithSize> foldersWithSize = await _dbRepo.getFoldersByTotalReceiptSize(folderId, order);
+        final List<ReceiptWithSize> receiptsWithSize =  await _dbRepo.getReceiptsBySize(folderId, order);
         final List<Object> files = [...foldersWithSize, ...receiptsWithSize];
         cachedCurrentlyDisplayedFiles = files;
         emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -103,8 +105,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         return;
       }
 
-      final List<Folder> folders = await DatabaseRepository.instance.getFoldersInFolderSortedBy(folderId, column, order);
-      final List<Receipt> receipts = await DatabaseRepository.instance.getReceiptsInFolderSortedBy(folderId, column, order);
+      final List<Folder> folders = await _dbRepo.getFoldersInFolderSortedBy(folderId, column, order);
+      final List<Receipt> receipts = await _dbRepo.getReceiptsInFolderSortedBy(folderId, column, order);
       final List<Object> files = [...folders, ...receipts];
       cachedCurrentlyDisplayedFiles = files;
       emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -165,17 +167,17 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   moveMultipleItems(List<Object> items, String destinationFolderId) async {
     try {
       final String targetFolderName =
-          (await DatabaseRepository.instance.getFolderById(destinationFolderId))
+          (await _dbRepo.getFolderById(destinationFolderId))
               .name;
 
       int numMoved = 0;
 
       for (final item in items) {
         if (item is Receipt) {
-          await DatabaseRepository.instance.moveReceipt(item, destinationFolderId);
+          await _dbRepo.moveReceipt(item, destinationFolderId);
           numMoved++;
         } else if (item is Folder) {
-          await DatabaseRepository.instance.moveFolder(item, destinationFolderId);
+          await _dbRepo.moveFolder(item, destinationFolderId);
           numMoved++;
         }
       }
@@ -198,11 +200,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     try {
       for (final item in objectList) {
         if (item is Receipt) {
-          await DatabaseRepository.instance.deleteReceipt(item.id);
+          await _dbRepo.deleteReceipt(item.id);
           numDeleted++;
           parentId = item.id;
         } else if (item is Folder) {
-          await DatabaseRepository.instance.deleteFolder(item.id);
+          await _dbRepo.deleteFolder(item.id);
           numDeleted++;
           parentId = item.id;
         }
@@ -221,7 +223,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // move folder
   moveFolder(Folder folder, String targetFolderId) async {
     final String targetFolderName =
-      (await DatabaseRepository.instance.getFolderById(targetFolderId))
+      (await _dbRepo.getFolderById(targetFolderId))
           .name;
 
     try {
@@ -263,7 +265,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         retrieveCachedItems();
 
         // updating db
-        DatabaseRepository.instance.updateFolder(updatedFolder);
+        _dbRepo.updateFolder(updatedFolder);
       } else {
         throw Exception('Unexpected error: ${folder.name} not found in cache');
       }
@@ -281,7 +283,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // delete folder
   deleteFolder(String folderId) async {
     final Folder deletedFolder =
-        await DatabaseRepository.instance.getFolderById(folderId);
+        await _dbRepo.getFolderById(folderId);
     try {
       cachedCurrentlyDisplayedFiles.removeWhere(
           (element) => element is Folder && element.id == folderId);
@@ -291,7 +293,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
       retrieveCachedItems();
 
-      DatabaseRepository.instance.deleteFolder(folderId);
+      _dbRepo.deleteFolder(folderId);
 
       // notifying home bloc to reload when a folder is deleted
       // as this could mean some nested receipts are deleted
@@ -357,7 +359,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       retrieveCachedItems();
 
       // save folder
-      DatabaseRepository.instance.insertFolder(folder);
+      _dbRepo.insertFolder(folder);
 
     } on Exception catch (e) {
       print('Error in uploadFolder: $e');
@@ -401,7 +403,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         retrieveCachedItems();
         
         // updating db
-        DatabaseRepository.instance.updateFolder(updatedFolder);
+        _dbRepo.updateFolder(updatedFolder);
 
       } else {
         throw Exception('Unexpected error: ${folder.name} not found in cache');
@@ -417,7 +419,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 // move receipt
   moveReceipt(Receipt receipt, String targetFolderId) async {
     final String targetFolderName =
-      (await DatabaseRepository.instance.getFolderById(targetFolderId))
+      (await _dbRepo.getFolderById(targetFolderId))
           .name;
 
     try {
@@ -461,7 +463,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         retrieveCachedItems();
 
         // updating db
-        DatabaseRepository.instance.updateReceipt(updatedReceipt);
+        _dbRepo.updateReceipt(updatedReceipt);
       } else {
         throw Exception('Unexpected error: ${receipt.name} not found in cache');
       }
@@ -479,7 +481,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
   // delete receipt
   deleteReceipt(String receiptId) async {
     final Receipt deletedReceipt =
-        await DatabaseRepository.instance.getReceiptById(receiptId);
+        await _dbRepo.getReceiptById(receiptId);
     try {
       cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receiptId);
 
@@ -488,7 +490,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
       retrieveCachedItems();
 
-      await DatabaseRepository.instance.deleteReceipt(receiptId);
+      await _dbRepo.deleteReceipt(receiptId);
 
       // notifying home bloc to reload when a receipt is deleted
       homeBloc.add(HomeLoadReceiptsEvent());
@@ -555,8 +557,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await DatabaseRepository.instance.insertTags(tags);
-        await DatabaseRepository.instance.insertReceipt(receipt);
+        await _dbRepo.insertTags(tags);
+        await _dbRepo.insertReceipt(receipt);
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -632,8 +634,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
 
-      await DatabaseRepository.instance.insertTags(tags);
-      await DatabaseRepository.instance.insertReceipt(receipt);
+      await _dbRepo.insertTags(tags);
+      await _dbRepo.insertReceipt(receipt);
       print('Image ${receipt.name} saved at ${receipt.localPath}');
 
       emit(FolderViewUploadSuccess(
@@ -706,8 +708,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await DatabaseRepository.instance.insertTags(tags);
-        await DatabaseRepository.instance.insertReceipt(receipt);
+        await _dbRepo.insertTags(tags);
+        await _dbRepo.insertReceipt(receipt);
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -783,7 +785,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             retrieveCachedItems();
 
             // updating db
-            DatabaseRepository.instance.updateReceipt(updatedReceipt);
+            _dbRepo.updateReceipt(updatedReceipt);
 
         } else {
             throw Exception('Unexpected error: ${receipt.name} not found in cache');
@@ -799,7 +801,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   generateZipFile(Folder folder, bool withPdfs) async {
 
-    final folderIsEmpty = await DatabaseRepository.instance.folderIsEmpty(folder.id);
+    final folderIsEmpty = await _dbRepo.folderIsEmpty(folder.id);
     
     if (folderIsEmpty) {
       emit(FolderViewFileEmpty(folder: folder, files: cachedCurrentlyDisplayedFiles, orderedBy: prefs.getLastColumn(), order: prefs.getLastOrder(),));
@@ -886,7 +888,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
             retrieveCachedItems();
 
             // updating db
-            DatabaseRepository.instance.updateReceipt(updatedReceipt);
+            _dbRepo.updateReceipt(updatedReceipt);
 
             // notifying home bloc to reload
             homeBloc.add(HomeLoadReceiptsEvent());
