@@ -549,6 +549,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       const int maxNumOfImagesBeforeDelay = 0;
 
       if (receiptImages.length > maxNumOfImagesBeforeDelay) {
+        // Loading state is shown before any new receipts
+        // or snackbars are displayed
         emit(FolderViewLoading());
       }
 
@@ -572,6 +574,9 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
+        dynamic typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+        cachedCurrentlyDisplayedFiles.add(typedReceipt);
+
         _dbRepo.insertTags(tags);
         await _dbRepo.insertReceipt(receipt);
         print('Image ${receipt.name} saved at ${receipt.localPath}');
@@ -591,6 +596,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           emitAction();
         }
       }
+
+      updateDisplayFilesWithCache();
 
       // notifying home bloc to reload when all receipts uploaded from gallery
       homeBloc.add(HomeLoadReceiptsEvent());
