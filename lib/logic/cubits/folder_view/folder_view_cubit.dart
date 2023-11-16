@@ -659,7 +659,6 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         uploadedName: receipt.name, folderId: receipt.parentId));
 
       updateDisplayFilesWithCache();
-      updateDisplayFilesWithCache();
 
       _dbRepo.insertTags(tags);
       await _dbRepo.insertReceipt(typedReceipt);
