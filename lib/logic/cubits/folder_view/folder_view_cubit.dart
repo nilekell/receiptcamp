@@ -126,7 +126,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     return currentOrder == prefs.getLastOrder() && currentColumn == prefs.getLastColumn();
   }
 
-  updateDisplayFiles() {
+  updateDisplayFilesWithCache() {
     // Separate folders and receipts
     List<Folder> folders = [];
     List<Receipt> receipts = [];
@@ -362,7 +362,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           }
       }
 
-      updateDisplayFiles();
+      updateDisplayFilesWithCache();
 
       emit(FolderViewUploadSuccess(
           uploadedName: folder.name, folderId: folder.parentId));
