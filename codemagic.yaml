@@ -80,7 +80,7 @@ workflows:
         # Optional boolean, defaults to false. Whether or not to submit the uploaded
         # build to TestFlight beta review. Required for distributing to beta groups.
         # Note: This action is performed during post-processing.
-        submit_to_testflight: true 
+        submit_to_testflight: false 
 
         # Optional boolean, defaults to false. Set to true to automatically expire 
         # previous build in review or waiting for review in Testflight before
