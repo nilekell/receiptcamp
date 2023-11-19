@@ -10,7 +10,7 @@ workflows:
         PACKAGE_NAME: "com.nilekell.receiptcamp.app"
         GOOGLE_PLAY_TRACK: beta
       android_signing:
-        - RECEIPTCAMP_CODEMAGIC_KEYSTORE
+        - M3_RECEIPTCAMP_CODEMAGIC_KEYSTORE
     scripts:
       - name: Set up local.properties
         script: | 
