@@ -52,116 +52,119 @@ class ReceiptListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.only(left: 10),
-        child: GestureDetector(
-          onLongPress: () {
-            Navigator.of(context).push(SlidingSelectMultipleTransitionRoute(
-                item: ListItem(item: receipt)));
-          },
-          child: ListTile(
-              leading: Draggable<Receipt>(
-                onDragStarted: () {
-                  _showReceiptOptionsButton.value = false;
-                },
-                onDragEnd: (details) {
-                  _showReceiptOptionsButton.value = true;
-                },
-                maxSimultaneousDrags: 1,
-                dragAnchorStrategy: (draggable, context, position) {
-                  return const Offset(50, 50);
-                },
-                data: receipt,
-                childWhenDragging: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withOpacity(0.3),
-                    BlendMode.srcIn,
-                  ),
-                  // adjusting position of visual list tile so it matches receipt list tile position
-                  child: Transform.translate(
-                    offset: const Offset(-26, -16),
-                    child: ReceiptListTileVisual(
-                      receipt: receipt,
-                      subtitle: calculateSubtitle(price, withSize, displayDate),
+    return SizedBox(
+      height: 60,
+      child: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: GestureDetector(
+            onLongPress: () {
+              Navigator.of(context).push(SlidingSelectMultipleTransitionRoute(
+                  item: ListItem(item: receipt)));
+            },
+            child: ListTile(
+                leading: Draggable<Receipt>(
+                  onDragStarted: () {
+                    _showReceiptOptionsButton.value = false;
+                  },
+                  onDragEnd: (details) {
+                    _showReceiptOptionsButton.value = true;
+                  },
+                  maxSimultaneousDrags: 1,
+                  dragAnchorStrategy: (draggable, context, position) {
+                    return const Offset(50, 50);
+                  },
+                  data: receipt,
+                  childWhenDragging: ColorFiltered(
+                    colorFilter: ColorFilter.mode(
+                      Colors.black.withOpacity(0.3),
+                      BlendMode.srcIn,
+                    ),
+                    // adjusting position of visual list tile so it matches receipt list tile position
+                    child: Transform.translate(
+                      offset: const Offset(-26, -16),
+                      child: ReceiptListTileVisual(
+                        receipt: receipt,
+                        subtitle: calculateSubtitle(price, withSize, displayDate),
+                      ),
                     ),
                   ),
-                ),
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Opacity(
-                        opacity: 0.7,
-                        child: SizedBox(
-                          height: 100,
-                          width: 100,
-                          child: ClipRRect(
-                            // square image corners
-                            borderRadius: const BorderRadius.all(Radius.zero),
-                            child: Image.file(
-                              File(receipt.localPath),
-                              fit: BoxFit.cover,
+                  feedback: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        Opacity(
+                          opacity: 0.7,
+                          child: SizedBox(
+                            height: 100,
+                            width: 100,
+                            child: ClipRRect(
+                              // square image corners
+                              borderRadius: const BorderRadius.all(Radius.zero),
+                              child: Image.file(
+                                File(receipt.localPath),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Transform.translate(
-                        offset: const Offset(0, 10),
-                        child: Text(
-                          draggableName,
-                          style: const TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
+                        Transform.translate(
+                          offset: const Offset(0, 10),
+                          child: Text(
+                            draggableName,
+                            style: const TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                child: SizedBox(
-                  height: 50,
-                  width: 50,
-                  child: ClipRRect(
-                    // square image corners
-                    borderRadius: const BorderRadius.all(Radius.zero),
-                    child: Image.file(
-                      File(receipt.localPath),
-                      fit: BoxFit.cover,
+                  child: SizedBox(
+                    height: 50,
+                    width: 50,
+                    child: ClipRRect(
+                      // square image corners
+                      borderRadius: const BorderRadius.all(Radius.zero),
+                      child: Image.file(
+                        File(receipt.localPath),
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              subtitle: Text(
-                calculateSubtitle(price, withSize, displayDate),
-                style: displayDateStyle,
-              ),
-              trailing: ValueListenableBuilder(
-                valueListenable: _showReceiptOptionsButton,
-                builder: (context, value, child) {
-                  return Visibility(
-                    visible: _showReceiptOptionsButton.value,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.more_vert,
-                        color: Color(primaryGrey),
-                        size: 30,
+                subtitle: Text(
+                  calculateSubtitle(price, withSize, displayDate),
+                  style: displayDateStyle,
+                ),
+                trailing: ValueListenableBuilder(
+                  valueListenable: _showReceiptOptionsButton,
+                  builder: (context, value, child) {
+                    return Visibility(
+                      visible: _showReceiptOptionsButton.value,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Color(primaryGrey),
+                          size: 30,
+                        ),
+                        onPressed: () {
+                          showReceiptOptions(
+                              context, context.read<FolderViewCubit>(), receipt);
+                        },
                       ),
-                      onPressed: () {
-                        showReceiptOptions(
-                            context, context.read<FolderViewCubit>(), receipt);
-                      },
-                    ),
-                  );
+                    );
+                  },
+                ),
+                onTap: () {
+                  Navigator.of(context)
+                      .push(SlidingImageTransitionRoute(receipt: receipt));
                 },
-              ),
-              onTap: () {
-                Navigator.of(context)
-                    .push(SlidingImageTransitionRoute(receipt: receipt));
-              },
-              title: Text(displayName,
-                  style: displayNameStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis)),
-        ));
+                title: Text(displayName,
+                    style: displayNameStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis)),
+          )),
+    );
   }
 }
 
@@ -188,33 +191,36 @@ class ReceiptListTileVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.only(left: 10),
-        child: SizedBox(
-          width: 300,
-          child: ListTile(
-              leading: SizedBox(
-                height: 50,
-                width: 50,
-                child: ClipRRect(
-                  // square image corners
-                  borderRadius: const BorderRadius.all(Radius.zero),
-                  child: Image.file(
-                    File(receipt.localPath),
-                    fit: BoxFit.cover,
+    return SizedBox(
+      height: 60,
+      child: Padding(
+          padding: const EdgeInsets.only(left: 10),
+          child: SizedBox(
+            width: 300,
+            child: ListTile(
+                leading: SizedBox(
+                  height: 50,
+                  width: 50,
+                  child: ClipRRect(
+                    // square image corners
+                    borderRadius: const BorderRadius.all(Radius.zero),
+                    child: Image.file(
+                      File(receipt.localPath),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              subtitle: Text(
-                subtitle, // Ternary operator to decide text
-                style: subTextStyle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              title: Text(displayName,
-                  style: displayNameStyle,
+                subtitle: Text(
+                  subtitle, // Ternary operator to decide text
+                  style: subTextStyle,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis)),
-        ));
+                  overflow: TextOverflow.ellipsis,
+                ),
+                title: Text(displayName,
+                    style: displayNameStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis)),
+          )),
+    );
   }
 }

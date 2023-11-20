@@ -13,9 +13,11 @@ import 'package:receiptcamp/data/services/isolate.dart';
 import 'package:receiptcamp/data/services/permissons.dart';
 import 'package:receiptcamp/data/services/preferences.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
+import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/receipt_helper.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/logic/blocs/home/home_bloc.dart';
+import 'package:receiptcamp/logic/cubits/file_explorer/file_explorer_cubit.dart';
 import 'package:receiptcamp/models/folder.dart';
 import 'package:receiptcamp/models/receipt.dart';
 import 'package:receiptcamp/models/tag.dart';
@@ -27,11 +29,15 @@ part 'folder_view_state.dart';
 class FolderViewCubit extends Cubit<FolderViewState> {
 
   final HomeBloc homeBloc;
+  final FileExplorerCubit fileExplorerCubit;
   final PreferencesService prefs; 
   List<dynamic> cachedCurrentlyDisplayedFiles = [];
 
-  FolderViewCubit({required this.homeBloc, required this.prefs}) : super(FolderViewInitial());
+  final DatabaseRepository _dbRepo = DatabaseRepository.instance;
 
+  FolderViewCubit({required this.homeBloc, required this.prefs, required this.fileExplorerCubit}) : super(FolderViewInitial());
+
+  // currently unused as initialisation is done by FileExplorerCubit
   // init folderview
   initFolderView() {
     emit(FolderViewInitial());
@@ -52,7 +58,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     final String lastOrder = prefs.getLastOrder();
 
     try {
-      final folder = await DatabaseRepository.instance.getFolderById(folderId);
+      final folder = await _dbRepo.getFolderById(folderId);
 
       // userSelectedSort is only true when the user taps on a tile in order options bottom sheet
       // this distinguishes between the user navigating between folders, sorting in the options sheet, or refreshing the folder view
@@ -71,8 +77,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       }
 
       if (column == 'price') {
-        final List<FolderWithPrice> foldersWithPrice = await DatabaseRepository.instance.getFoldersByPrice(folderId, order);
-        final List<ReceiptWithPrice> receiptsWithPrices = await DatabaseRepository.instance.getReceiptsByPrice(folderId, order);
+        final List<FolderWithPrice> foldersWithPrice = await _dbRepo.getFoldersByPrice(folderId, order);
+        final List<ReceiptWithPrice> receiptsWithPrices = await _dbRepo.getReceiptsByPrice(folderId, order);
         final List<Object> files = [...foldersWithPrice, ...receiptsWithPrices];
         cachedCurrentlyDisplayedFiles = files;
         emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -84,8 +90,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       }
 
       if (column == 'storageSize') {
-        final List<FolderWithSize> foldersWithSize = await DatabaseRepository.instance.getFoldersByTotalReceiptSize(folderId, order);
-        final List<ReceiptWithSize> receiptsWithSize =  await DatabaseRepository.instance.getReceiptsBySize(folderId, order);
+        final List<FolderWithSize> foldersWithSize = await _dbRepo.getFoldersByTotalReceiptSize(folderId, order);
+        final List<ReceiptWithSize> receiptsWithSize =  await _dbRepo.getReceiptsBySize(folderId, order);
         final List<Object> files = [...foldersWithSize, ...receiptsWithSize];
         cachedCurrentlyDisplayedFiles = files;
         emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -96,8 +102,8 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         return;
       }
 
-      final List<Folder> folders = await DatabaseRepository.instance.getFoldersInFolderSortedBy(folderId, column, order);
-      final List<Receipt> receipts = await DatabaseRepository.instance.getReceiptsInFolderSortedBy(folderId, column, order);
+      final List<Folder> folders = await _dbRepo.getFoldersInFolderSortedBy(folderId, column, order);
+      final List<Receipt> receipts = await _dbRepo.getReceiptsInFolderSortedBy(folderId, column, order);
       final List<Object> files = [...folders, ...receipts];
       cachedCurrentlyDisplayedFiles = files;
       emit(FolderViewLoadedSuccess(files: files, folder: folder, orderedBy: column, order: order));
@@ -116,20 +122,69 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     return currentOrder == prefs.getLastOrder() && currentColumn == prefs.getLastColumn();
   }
 
+  updateDisplayFilesWithCache() {
+    // Separate folders and receipts
+    List<Folder> folders = [];
+    List<Receipt> receipts = [];
+
+    for (var item in cachedCurrentlyDisplayedFiles) {
+      if (item is Folder) {
+        folders.add(item);
+      } else if (item is Receipt) {
+        receipts.add(item);
+      }
+    }
+
+    final lastColumn = prefs.getLastColumn();
+    final lastOrder = prefs.getLastOrder();
+
+    // Sort the folders based on the lastColumn and lastOrder
+    switch (lastColumn) {
+      case 'price':
+          folders = FolderHelper.sortFoldersByTotalCost(folders, lastOrder);
+          receipts = ReceiptService.sortReceiptsByTotalCost(receipts, lastOrder);
+        break;
+      case 'storageSize':
+        folders = FolderHelper.sortFoldersBySize(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsBySize(receipts, lastOrder);
+        break;
+      case 'lastModified':
+        folders = FolderHelper.sortFoldersByLastModified(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsByLastModified(receipts, lastOrder);
+        break;
+      case 'name':
+        folders = FolderHelper.sortFoldersByName(folders, lastOrder);
+        receipts = ReceiptService.sortReceiptsByName(receipts, lastOrder);
+        break;
+    }
+
+    // Reassemble cachedCurrentlyDisplayedFiles with sorted folders followed by receipts
+    cachedCurrentlyDisplayedFiles
+      ..clear()
+      ..addAll(folders)
+      ..addAll(receipts);
+
+    emit(FolderViewLoadedSuccess(
+        files: cachedCurrentlyDisplayedFiles,
+        folder: fileExplorerCubit.currentlyDisplayedFolder!,
+        orderedBy: prefs.getLastColumn(),
+        order: prefs.getLastOrder()));
+  }
+
   moveMultipleItems(List<Object> items, String destinationFolderId) async {
     try {
       final String targetFolderName =
-          (await DatabaseRepository.instance.getFolderById(destinationFolderId))
+          (await _dbRepo.getFolderById(destinationFolderId))
               .name;
 
       int numMoved = 0;
 
       for (final item in items) {
         if (item is Receipt) {
-          await DatabaseRepository.instance.moveReceipt(item, destinationFolderId);
+          await _dbRepo.moveReceipt(item, destinationFolderId);
           numMoved++;
         } else if (item is Folder) {
-          await DatabaseRepository.instance.moveFolder(item, destinationFolderId);
+          await _dbRepo.moveFolder(item, destinationFolderId);
           numMoved++;
         }
       }
@@ -152,11 +207,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     try {
       for (final item in objectList) {
         if (item is Receipt) {
-          await DatabaseRepository.instance.deleteReceipt(item.id);
+          await _dbRepo.deleteReceipt(item.id);
           numDeleted++;
           parentId = item.id;
         } else if (item is Folder) {
-          await DatabaseRepository.instance.deleteFolder(item.id);
+          await _dbRepo.deleteFolder(item.id);
           numDeleted++;
           parentId = item.id;
         }
@@ -174,45 +229,98 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   // move folder
   moveFolder(Folder folder, String targetFolderId) async {
-    final String targetFolderName =
-        (await DatabaseRepository.instance.getFolderById(targetFolderId)).name;
+     final Folder targetFolder =
+      await _dbRepo.getFolderById(targetFolderId);
+
     try {
-      await DatabaseRepository.instance.moveFolder(folder, targetFolderId);
-      emit(FolderViewMoveSuccess(
-          oldName: folder.name,
-          newName: targetFolderName,
-          folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId);
+      // Check if the folder is found in the cached list
+      int index = cachedCurrentlyDisplayedFiles.indexWhere(
+          (element) => element is Folder && element.id == folder.id);
+
+      // updating cache
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Folder && element.id == folder.id);
+
+      // Update the parentId of the folder in the cached list
+      dynamic updatedFolder = Folder(
+        id: folder.id,
+        name: folder.name,
+        lastModified: Utility.getCurrentTime(),
+        parentId: targetFolderId,
+      );
+
+      if (index != -1) {
+        // getting folder type
+        switch (folder) {
+          case FolderWithPrice():
+            updatedFolder =
+                FolderWithPrice(price: folder.price, folder: updatedFolder);
+          case FolderWithSize():
+            updatedFolder = FolderWithSize(
+                storageSize: folder.storageSize, folder: updatedFolder);
+          default:
+            break;
+        }
+
+        // reload all files in folder when receipt is moved to a folder within the same folder
+        if (targetFolder.parentId == folder.parentId) {
+          await _dbRepo.updateFolder(updatedFolder);
+          emit(FolderViewMoveSuccess(
+            oldName: folder.name,
+            newName: targetFolder.name,
+            folderId: folder.parentId));
+          fetchFilesInFolderSortedBy(folder.parentId);
+          return;
+        }
+
+        emit(FolderViewMoveSuccess(
+            oldName: folder.name,
+            newName: targetFolder.name,
+            folderId: folder.parentId));
+
+        // emitting cache
+        updateDisplayFilesWithCache();
+
+        // updating db
+        _dbRepo.updateFolder(updatedFolder);
+      } else {
+        throw Exception('Unexpected error: ${folder.name} not found in cache');
+      }
+      
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: folder.name,
-          newName: targetFolderName,
+          newName: targetFolder.name,
           folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(folder.parentId);
     }
   }
 
   // delete folder
   deleteFolder(String folderId) async {
     final Folder deletedFolder =
-        await DatabaseRepository.instance.getFolderById(folderId);
+        await _dbRepo.getFolderById(folderId);
     try {
-      await DatabaseRepository.instance.deleteFolder(folderId);
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Folder && element.id == folderId);
+
       emit(FolderViewDeleteSuccess(
           deletedName: deletedFolder.name, folderId: deletedFolder.parentId));
 
-      
+      updateDisplayFilesWithCache();
+
+      _dbRepo.deleteFolder(folderId);
+
       // notifying home bloc to reload when a folder is deleted
+      // as this could mean some nested receipts are deleted
       homeBloc.add(HomeLoadReceiptsEvent());
       
-      fetchFilesInFolderSortedBy(deletedFolder.parentId);
-
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewDeleteFailure(
           deletedName: deletedFolder.name, folderId: deletedFolder.parentId));
-      fetchFilesInFolderSortedBy(deletedFolder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(deletedFolder.parentId, useCachedFiles: false);
     }
   }
 
@@ -230,12 +338,34 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           lastModified: currentTime,
           parentId: parentFolderId);
 
-      // save folder
-      DatabaseRepository.instance.insertFolder(folder);
+      final lastColumn = prefs.getLastColumn();
+      final lastOrder = prefs.getLastOrder();
+
+      dynamic customFolder;
+
+      switch (lastColumn) {
+        case 'price':
+          customFolder = FolderWithPrice(price: '--', folder: folder);
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+        case 'storageSize':
+          customFolder = FolderWithSize(storageSize: 0, folder: folder);
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+        case 'lastModified':
+        case 'name':
+          customFolder = folder;
+          cachedCurrentlyDisplayedFiles.add(customFolder);
+      }
+
+      updateDisplayFilesWithCache();
 
       emit(FolderViewUploadSuccess(
           uploadedName: folder.name, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(parentFolderId);
+
+      updateDisplayFilesWithCache();
+
+      // save folder
+      _dbRepo.insertFolder(folder);
+
     } on Exception catch (e) {
       print('Error in uploadFolder: $e');
       emit(FolderViewError());
@@ -243,65 +373,152 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     }
   }
 
-// rename folder
+  // rename folder
   renameFolder(Folder folder, String newName) async {
     try {
-      await DatabaseRepository.instance.renameFolder(folder.id, newName);
-      emit(FolderViewRenameSuccess(
-          oldName: folder.name, newName: newName, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId);
+      int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Folder && element.id == folder.id);
+
+      dynamic updatedFolder = Folder(
+        id: folder.id,
+        name: newName,
+        lastModified: Utility.getCurrentTime(),
+        parentId: folder.parentId,
+      );
+
+      // Check if the folder is found in the cached list
+      if (index != -1) {
+        // getting folder type
+        switch (folder) {
+          case FolderWithPrice():
+            updatedFolder = FolderWithPrice(price: folder.price, folder: updatedFolder);
+          case FolderWithSize():
+            updatedFolder = FolderWithSize(
+              storageSize: folder.storageSize, folder: updatedFolder);
+          default:
+          break;
+        }
+        
+        // updating cache
+        cachedCurrentlyDisplayedFiles[index] = updatedFolder;
+
+        emit(FolderViewRenameSuccess(
+        oldName: folder.name, newName: newName, folderId: folder.parentId));
+
+        // emitting cache
+        updateDisplayFilesWithCache();
+        
+        // updating db
+        _dbRepo.updateFolder(updatedFolder);
+
+      } else {
+        throw Exception('Unexpected error: ${folder.name} not found in cache');
+      }
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewRenameFailure(
           oldName: folder.name, newName: newName, folderId: folder.parentId));
-      fetchFilesInFolderSortedBy(folder.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(folder.parentId);
     }
   }
 
-// move receipt
+  // move receipt
   moveReceipt(Receipt receipt, String targetFolderId) async {
-    final String targetFolderName =
-        (await DatabaseRepository.instance.getFolderById(targetFolderId)).name;
+    final Folder targetFolder =
+      await _dbRepo.getFolderById(targetFolderId);
+
     try {
-      await DatabaseRepository.instance.moveReceipt(receipt, targetFolderId);
-      emit(FolderViewMoveSuccess(
-          oldName: receipt.name,
-          newName: targetFolderName,
-          folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId);
+      // Check if the receipt is found in the cached list
+      int index = cachedCurrentlyDisplayedFiles.indexWhere(
+          (element) => element is Receipt && element.id == receipt.id);
+
+      // updating cache
+      cachedCurrentlyDisplayedFiles.removeWhere(
+          (element) => element is Receipt && element.id == receipt.id);
+
+      // Update the parentId of the receipt in the cached list
+      dynamic updatedReceipt = Receipt(
+        id: receipt.id,
+        name: receipt.name,
+        lastModified: Utility.getCurrentTime(),
+        parentId: targetFolderId,
+        fileName: receipt.fileName,
+        dateCreated: receipt.dateCreated,
+        storageSize: receipt.storageSize,
+      );
+
+      if (index != -1) {
+        // getting folder type
+        switch (receipt) {
+          case ReceiptWithPrice():
+            updatedReceipt =
+                ReceiptWithPrice(receipt: updatedReceipt, priceString: receipt.priceString, priceDouble: receipt.priceDouble);
+          case ReceiptWithSize():
+            updatedReceipt = ReceiptWithSize(withSize: receipt.withSize, receipt: updatedReceipt);
+          default:
+            break;
+        }
+        
+        // reload all files in folder when receipt is moved to a folder within the same folder
+        if (targetFolder.parentId == receipt.parentId) {
+          await _dbRepo.updateReceipt(updatedReceipt);
+          emit(FolderViewMoveSuccess(
+            oldName: receipt.name,
+            newName: targetFolder.name,
+            folderId: receipt.parentId));
+          fetchFilesInFolderSortedBy(receipt.parentId);
+          return;
+        }
+
+        emit(FolderViewMoveSuccess(
+            oldName: receipt.name,
+            newName: targetFolder.name,
+            folderId: receipt.parentId));
+
+        // emitting cache
+        updateDisplayFilesWithCache();
+
+        // updating db
+        _dbRepo.updateReceipt(updatedReceipt);
+      } else {
+        throw Exception('Unexpected error: ${receipt.name} not found in cache');
+      }
+      
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewMoveFailure(
           oldName: receipt.name,
-          newName: targetFolderName,
+          newName: targetFolder.name,
           folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(receipt.parentId);
     }
   }
 
-// delete receipt
+  // delete receipt
   deleteReceipt(String receiptId) async {
     final Receipt deletedReceipt =
-        await DatabaseRepository.instance.getReceiptById(receiptId);
+        await _dbRepo.getReceiptById(receiptId);
     try {
-      await DatabaseRepository.instance.deleteReceipt(receiptId);
+      cachedCurrentlyDisplayedFiles.removeWhere((element) => element is Receipt && element.id == receiptId);
+
       emit(FolderViewDeleteSuccess(
           deletedName: deletedReceipt.name, folderId: deletedReceipt.parentId));
-      
+
+      updateDisplayFilesWithCache();
+
+      await _dbRepo.deleteReceipt(receiptId);
+
       // notifying home bloc to reload when a receipt is deleted
       homeBloc.add(HomeLoadReceiptsEvent());
-
-      fetchFilesInFolderSortedBy(deletedReceipt.parentId);
 
     } on Exception catch (e) {
       print(e.toString());
       emit(FolderViewDeleteFailure(
           deletedName: deletedReceipt.name, folderId: deletedReceipt.parentId));
-      fetchFilesInFolderSortedBy(deletedReceipt.parentId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(deletedReceipt.parentId);
     }
   }
 
-// upload receipt
+  // upload receipt
   uploadReceiptFromGallery(String currentFolderId) async {
     // Requesting photos permission if not granted
     if (!PermissionsService.instance.hasPhotosAccess) {
@@ -329,13 +546,16 @@ class FolderViewCubit extends Cubit<FolderViewState> {
       bool someImagesFailed = false;
       ValidationError invalidImageReason = ValidationError.none;
 
-      const int maxNumOfImagesBeforeDelay = 0;
+      const int maxNumOfImagesBeforeDelay = 1;
 
       if (receiptImages.length > maxNumOfImagesBeforeDelay) {
+        // Loading state is shown before any new receipts
+        // or snackbars are displayed
         emit(FolderViewLoading());
       }
 
       List<void Function()> emitQueue = [];
+      List<Future<void> Function()> insertQueue = [];
       final imageCount = receiptImages.length;
 
       for (final image in receiptImages) {
@@ -355,8 +575,13 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await DatabaseRepository.instance.insertTags(tags);
-        await DatabaseRepository.instance.insertReceipt(receipt);
+        Receipt typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+        cachedCurrentlyDisplayedFiles.add(typedReceipt);
+
+        // scheduling db operations for later
+        insertQueue.add(() => _dbRepo.insertTags(tags));
+        insertQueue.add(() => _dbRepo.insertReceipt(receipt));
+
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -368,6 +593,11 @@ class FolderViewCubit extends Cubit<FolderViewState> {
           });
         }
       }
+      
+      if (someImagesFailed) {
+        print(invalidImageReason.name);
+        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      }
 
       if (imageCount > maxNumOfImagesBeforeDelay) {
         for (var emitAction in emitQueue) {
@@ -375,20 +605,20 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         }
       }
 
-      // notifying home bloc to reload when all receipts uploaded from gallery
-      homeBloc.add(HomeLoadReceiptsEvent());
+      updateDisplayFilesWithCache();
 
-      if (someImagesFailed) {
-        print(invalidImageReason.name);
-        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      // calling db operations
+      for (var action in insertQueue) {
+        await action();
       }
 
-      fetchFilesInFolderSortedBy(currentFolderId);
+      // notifying home bloc to reload when all receipts uploaded from gallery
+      homeBloc.add(HomeLoadReceiptsEvent());
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-       fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+       fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
@@ -417,6 +647,10 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
       bool validImage;
 
+      // emit(FolderViewLoading());
+      // not emitting loading state as ReceiptService.isValidImage()
+      // won't take long to complete for just a single image
+
       (validImage, invalidImageReason) =
           await ReceiptService.isValidImage(receiptPhoto.path);
       if (!validImage) {
@@ -431,23 +665,24 @@ class FolderViewCubit extends Cubit<FolderViewState> {
               receiptPhoto, currentFolderId);
       final Receipt receipt = results[0];
       final List<Tag> tags = results[1];
-
-      await DatabaseRepository.instance.insertTags(tags);
-      await DatabaseRepository.instance.insertReceipt(receipt);
-      print('Image ${receipt.name} saved at ${receipt.localPath}');
+      dynamic typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+      cachedCurrentlyDisplayedFiles.add(typedReceipt);
 
       emit(FolderViewUploadSuccess(
-          uploadedName: receipt.name, folderId: receipt.parentId));
+        uploadedName: receipt.name, folderId: receipt.parentId));
+
+      updateDisplayFilesWithCache();
+
+      _dbRepo.insertTags(tags);
+      await _dbRepo.insertReceipt(typedReceipt);
 
       // notifying home bloc to reload when a receipt is uploaded from camera
       homeBloc.add(HomeLoadReceiptsEvent());
-      
-      fetchFilesInFolderSortedBy(receipt.parentId);
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
@@ -472,13 +707,14 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         return;
       }
 
-      const int maxNumOfImagesBeforeDelay = 0;
+      const int maxNumOfImagesBeforeDelay = 1;
 
       if (scannedImagePaths.length > maxNumOfImagesBeforeDelay) {
         emit(FolderViewLoading());
       }
 
       List<void Function()> emitQueue = [];
+      List<Future<void> Function()> insertQueue = [];
       final imageCount = scannedImagePaths.length;
 
       bool someImagesFailed = false;
@@ -506,8 +742,14 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         final Receipt receipt = results[0];
         final List<Tag> tags = results[1];
 
-        await DatabaseRepository.instance.insertTags(tags);
-        await DatabaseRepository.instance.insertReceipt(receipt);
+        Receipt typedReceipt = await ReceiptService.createTypedReceiptFromColumn(receipt, prefs.getLastColumn(), prefs.getLastOrder());
+        cachedCurrentlyDisplayedFiles.add(typedReceipt);
+        print(cachedCurrentlyDisplayedFiles.length);
+
+        // scheduling db operations for later
+        insertQueue.add(() => _dbRepo.insertTags(tags));
+        insertQueue.add(() => _dbRepo.insertReceipt(receipt));
+
         print('Image ${receipt.name} saved at ${receipt.localPath}');
 
         if (imageCount <= maxNumOfImagesBeforeDelay) {
@@ -521,53 +763,92 @@ class FolderViewCubit extends Cubit<FolderViewState> {
         }
       }
 
+      if (someImagesFailed) {
+        print(invalidImageReason.name);
+        // if a single image fails the validation, show the upload failed
+        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      }
+
       if (imageCount > maxNumOfImagesBeforeDelay) {
           for (var emitAction in emitQueue) {
             emitAction();
           }
         }
 
-      if (someImagesFailed) {
-        print(invalidImageReason.name);
-        // if a single image fails the validation, show the upload failed
-        emit(FolderViewUploadFailure(folderId: currentFolderId, validationType: invalidImageReason));
+      updateDisplayFilesWithCache();
+
+      // calling db operations
+      for (var action in insertQueue) {
+        await action();
       }
       
       // notifying home bloc to reload when a receipt is uploaded from document scan
       homeBloc.add(HomeLoadReceiptsEvent());
-      
-      fetchFilesInFolderSortedBy(currentFolderId);
 
     } on Exception catch (e) {
       print('Error in uploadReceipt: $e');
       emit(FolderViewError());
-      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: true);
+      fetchFilesInFolderSortedBy(currentFolderId, useCachedFiles: false);
     }
   }
 
   // rename receipt
   renameReceipt(Receipt receipt, String newName) async {
     try {
-      await DatabaseRepository.instance.renameReceipt(receipt.id, newName);
-      emit(FolderViewRenameSuccess(
-          oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+        int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
 
-      // notifying home bloc to reload when a receipt is renamed
-      homeBloc.add(HomeLoadReceiptsEvent());
-      
-      fetchFilesInFolderSortedBy(receipt.parentId);
+        dynamic updatedReceipt = Receipt(
+            id: receipt.id,
+            name: newName,
+            fileName: receipt.fileName,
+            dateCreated: receipt.dateCreated,
+            lastModified: Utility.getCurrentTime(),
+            parentId: receipt.parentId,
+            storageSize: receipt.storageSize
+        );
 
+        // Check if the receipt is found in the cached list
+        if (index != -1) {
+            // getting receipt type
+            switch (receipt) {
+                case ReceiptWithPrice():
+                    updatedReceipt = ReceiptWithPrice(priceString: receipt.priceString, priceDouble: receipt.priceDouble, receipt: updatedReceipt);
+                case ReceiptWithSize():
+                    updatedReceipt = ReceiptWithSize(
+                        withSize: receipt.withSize, receipt: updatedReceipt);
+                default:
+                    break;
+            }
+
+            // updating cache
+            cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
+
+            emit(FolderViewRenameSuccess(
+                oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+
+            // emitting cache
+            updateDisplayFilesWithCache();
+
+            // updating db
+            await _dbRepo.updateReceipt(updatedReceipt);
+
+            homeBloc.add(HomeLoadReceiptsEvent());
+
+        } else {
+            throw Exception('Unexpected error: ${receipt.name} not found in cache');
+        }
     } on Exception catch (e) {
-      print(e.toString());
-      emit(FolderViewRenameFailure(
-          oldName: receipt.name, newName: newName, folderId: receipt.parentId));
-      fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: true);
+        print(e.toString());
+        emit(FolderViewRenameFailure(
+            oldName: receipt.name, newName: newName, folderId: receipt.parentId));
+        fetchFilesInFolderSortedBy(receipt.parentId);
     }
-  }
+}
+
 
   generateZipFile(Folder folder, bool withPdfs) async {
 
-    final folderIsEmpty = await DatabaseRepository.instance.folderIsEmpty(folder.id);
+    final folderIsEmpty = await _dbRepo.folderIsEmpty(folder.id);
     
     if (folderIsEmpty) {
       emit(FolderViewFileEmpty(folder: folder, files: cachedCurrentlyDisplayedFiles, orderedBy: prefs.getLastColumn(), order: prefs.getLastOrder(),));
@@ -621,26 +902,51 @@ class FolderViewCubit extends Cubit<FolderViewState> {
 
   updateReceiptDate(Receipt receipt, int newTimestamp) async {
     try {
-      final updatedReceipt = Receipt(
-          id: receipt.id,
-          name: receipt.name,
-          fileName: receipt.fileName,
-          dateCreated: newTimestamp,
-          lastModified: newTimestamp,
-          storageSize: receipt.storageSize,
-          parentId: receipt.parentId);
-      await DatabaseRepository.instance.updateReceipt(updatedReceipt);
+        int index = cachedCurrentlyDisplayedFiles.indexWhere((element) => element is Receipt && element.id == receipt.id);
 
-      emit(FolderViewUpdateDateSuccess(folderId: receipt.parentId));
-      // notifying home bloc to reload when a receipt is renamed
-      homeBloc.add(HomeLoadReceiptsEvent());
+        dynamic updatedReceipt = Receipt(
+            id: receipt.id,
+            name: receipt.name,
+            fileName: receipt.fileName,
+            dateCreated: newTimestamp,
+            lastModified: newTimestamp,
+            storageSize: receipt.storageSize,
+            parentId: receipt.parentId
+        );
 
-      fetchFilesInFolderSortedBy(receipt.parentId);
+        // Check if the receipt is found in the cached list
+        if (index != -1) {
+            // getting receipt type
+            switch (receipt) {
+                case ReceiptWithPrice():
+                    updatedReceipt = ReceiptWithPrice(priceString: receipt.priceString, priceDouble: receipt.priceDouble, receipt: updatedReceipt);
+                case ReceiptWithSize():
+                    updatedReceipt = ReceiptWithSize(withSize: receipt.withSize, receipt: updatedReceipt);
+                default:
+                    break;
+            }
+
+            // updating cache
+            cachedCurrentlyDisplayedFiles[index] = updatedReceipt;
+
+            emit(FolderViewUpdateDateSuccess(receiptName: receipt.name, folderId: receipt.parentId, oldTimestamp: receipt.lastModified, newTimestamp: newTimestamp));
+
+            // emitting cache
+            updateDisplayFilesWithCache();
+
+            // updating db
+            await _dbRepo.updateReceipt(updatedReceipt);
+
+            // notifying home bloc to reload
+            homeBloc.add(HomeLoadReceiptsEvent());
+
+        } else {
+            throw Exception('Unexpected error: ${receipt.name} not found in cache');
+        }
     } on Exception catch (e) {
-      print(e.toString());
-      emit(FolderViewUpdateDateFailure(folderId: receipt.parentId));
+        print(e.toString());
+        emit(FolderViewUpdateDateFailure(folderId: receipt.parentId));
+        fetchFilesInFolderSortedBy(receipt.parentId, useCachedFiles: false);
     }
-
-
-  }
+}
 }
