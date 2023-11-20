@@ -34,7 +34,7 @@ class PurchasesCubit extends Cubit<PurchasesState> {
       }
       
       final bool isPurchaseSuccessful =
-          await _purchasesService.makeProSubscriptionPurchase();
+          await _purchasesService.makeProLifetimePurchase();
       if (isPurchaseSuccessful) {
         emit(PurchasesSuccess());
       } else {
