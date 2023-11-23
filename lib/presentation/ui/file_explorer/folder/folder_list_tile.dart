@@ -51,6 +51,8 @@ class FolderListTile extends StatelessWidget {
     }
   }
 
+  final ValueNotifier<bool> _showFolderOptionsButton = ValueNotifier<bool>(true);
+
   @override
   Widget build(BuildContext context) {
     return DragTarget<Object>(
@@ -73,27 +75,57 @@ class FolderListTile extends StatelessWidget {
         }
       },
       builder: (context, candidateData, rejectedData) {
-        return Container(
-          color: candidateData.isNotEmpty ? Colors.grey : Colors.transparent,
-          child: Draggable<Folder>(
-            dragAnchorStrategy: (draggable, context, position) {
-              return const Offset(50, 50);
-            },
-            data: folder,
-            childWhenDragging: ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.3),
-                BlendMode.srcIn,
-              ),
-              child: FolderListTileVisual(folder: folder, subtitle: calculateSubtitle(storageSize, price, displayDate))
-            ),
-            feedback: Material(
-              color: Colors.transparent,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const Opacity(
-                    opacity: 0.7,
+        return SizedBox(
+          height: 60,
+          child: Container(
+            color: candidateData.isNotEmpty ? Colors.grey : Colors.transparent,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: GestureDetector(
+                onLongPress: () {
+                  Navigator.of(context).push(SlidingSelectMultipleTransitionRoute(
+                      item: ListItem(item: folder)));
+                },
+                child: ListTile(
+                  subtitle: Text(
+                    calculateSubtitle(storageSize, price, displayDate),
+                    style: displayDateStyle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  // only the icon is draggable
+                  leading: Draggable<Folder>(
+                    // hiding/showing options button when visual list tile is shown
+                    onDragStarted: () {
+                      _showFolderOptionsButton.value = false;
+                    },
+                    onDragEnd: (details) {
+                      _showFolderOptionsButton.value = true;
+                    },
+                    maxSimultaneousDrags: 1,
+                    dragAnchorStrategy: (draggable, context, position) {
+                      return const Offset(50, 50);
+                    },
+                    data: folder,
+                    childWhenDragging: ColorFiltered(
+                        colorFilter: ColorFilter.mode(
+                          Colors.black.withOpacity(0.3),
+                          BlendMode.srcIn,
+                        ),
+                        // adjusting position of visual list tile so it matches folder list tile posiiton
+                        child: Transform.translate(
+                            offset: const Offset(-26, -8),
+                            child: FolderListTileVisual(
+                                folder: folder,
+                                subtitle: calculateSubtitle(
+                                    storageSize, price, displayDate)))),
+                    feedback: Material(
+                      color: Colors.transparent,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          const Opacity(
+                            opacity: 0.7,
                     child: Icon(
                       Icons.folder,
                       size: 100,
@@ -107,37 +139,31 @@ class FolderListTile extends StatelessWidget {
                           fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                   ),
-                ],
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 10),
-              child: GestureDetector(
-                onLongPress: () {
-                  Navigator.of(context).push(
-                    SlidingSelectMultipleTransitionRoute(
-                        item: ListItem(item: folder)));
-                },
-                child: ListTile(
-                  subtitle: Text(
-                    calculateSubtitle(storageSize, price, displayDate),
-                    style: displayDateStyle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  leading: const Icon(
-                    Icons.folder,
-                    size: 50,
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(
-                      Icons.more_vert,
-                      color: Color(primaryGrey),
-                      size: 30,
+                              ],
+                            ),
+                          ),
+                    child: const Icon(
+                      Icons.folder,
+                      size: 50,
                     ),
-                    onPressed: () {
-                      showFolderOptions(
-                          context, context.read<FolderViewCubit>(), folder);
+                  ),
+                  trailing: ValueListenableBuilder(
+                    valueListenable: _showFolderOptionsButton,
+                    builder: (context, value, child) {
+                      return Visibility(
+                        visible: _showFolderOptionsButton.value,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.more_vert,
+                          color: Color(primaryGrey),
+                          size: 30,
+                        ),
+                        onPressed: () {
+                          showFolderOptions(
+                              context, context.read<FolderViewCubit>(), folder);
+                        },
+                      ),
+                    );
                     },
                   ),
                   onTap: () {
@@ -179,37 +205,30 @@ class FolderListTileVisual extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 10),
-      child: ListTile(
-        subtitle: Text(
-          subtitle,
-          style: subTextStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        leading: const Icon(
-          Icons.folder,
-          size: 50,
-        ),
-        trailing: IconButton(
-          icon: const Icon(
-            Icons.more_vert,
-            color: Color(primaryGrey),
-            size: 30,
+    return SizedBox(
+      height: 60,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 10),
+        child: SizedBox(
+          width: 300,
+          child: ListTile(
+            subtitle: Text(
+              subtitle,
+              style: subTextStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            leading: const Icon(
+              Icons.folder,
+              size: 50,
+            ),
+            title: Text(
+              displayName,
+              style: displayNameStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          onPressed: () {
-            return;
-          },
-        ),
-        onTap: () {
-          return;
-        },
-        title: Text(
-          displayName,
-          style: displayNameStyle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

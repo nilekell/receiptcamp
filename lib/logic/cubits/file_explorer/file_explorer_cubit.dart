@@ -10,6 +10,8 @@ part 'file_explorer_state.dart';
 class FileExplorerCubit extends Cubit<FileExplorerCubitState> {
   FileExplorerCubit() : super(FileExplorerCubitInitial());
 
+  Folder? currentlyDisplayedFolder;
+
   // method to display root folder information when the bottom navigation tab switches to file explorer
   initializeFileExplorerCubit() async {
     emit(FileExplorerCubitInitial());
@@ -21,6 +23,7 @@ class FileExplorerCubit extends Cubit<FileExplorerCubitState> {
     emit(FileExplorerCubitLoading());
     try {
       final folder = await DatabaseRepository.instance.getFolderById(folderId);
+      currentlyDisplayedFolder = folder;
       emit(FileExplorerCubitFolderInformationSuccess(folder: folder));
     } catch (error) {
       emit(FileExplorerCubitError());
@@ -32,6 +35,7 @@ class FileExplorerCubit extends Cubit<FileExplorerCubitState> {
     emit(FileExplorerCubitLoading());
     try {
       final folder = await DatabaseRepository.instance.getFolderById(folderId);
+      currentlyDisplayedFolder = folder;
       emit(FileExplorerCubitFolderInformationSuccess(folder: folder));
     } catch (error) {
       emit(FileExplorerCubitError());
@@ -43,6 +47,7 @@ class FileExplorerCubit extends Cubit<FileExplorerCubitState> {
     emit(FileExplorerCubitLoading());
     try {
       final Folder parentFolder = await DatabaseRepository.instance.getFolderById(parentFolderId);
+      currentlyDisplayedFolder = parentFolder;
       emit(FileExplorerCubitFolderInformationSuccess(folder: parentFolder));
     } catch (error) {
       emit(FileExplorerCubitError());

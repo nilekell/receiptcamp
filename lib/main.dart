@@ -58,8 +58,8 @@ void main() async {
       BlocProvider(
         create: (context) => FolderViewCubit(
             homeBloc: context.read<HomeBloc>(),
+            fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(
@@ -98,8 +98,8 @@ void main() async {
       BlocProvider(
         create: (context) => FolderViewCubit(
             homeBloc: context.read<HomeBloc>(),
+            fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(

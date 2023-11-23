@@ -75,10 +75,14 @@ final class FolderViewMoveFailure extends FolderViewActionState {
 }
 
 final class FolderViewUpdateDateSuccess extends FolderViewActionState {
-  const FolderViewUpdateDateSuccess({required super.folderId});
+  const FolderViewUpdateDateSuccess({required super.folderId, required this.oldTimestamp, required this.newTimestamp, required this.receiptName});
+
+  final String receiptName;
+  final int oldTimestamp;
+  final int newTimestamp;
 
   @override
-  List<Object> get props => [folderId];
+  List<Object> get props => [folderId, oldTimestamp, newTimestamp, receiptName];
 }
 
 final class FolderViewUpdateDateFailure extends FolderViewActionState {

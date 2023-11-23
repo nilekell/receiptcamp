@@ -1,5 +1,6 @@
 import 'package:receiptcamp/data/data_constants.dart';
 import 'package:receiptcamp/data/utils/file_helper.dart';
+import 'package:receiptcamp/data/utils/folder_helper.dart';
 import 'package:receiptcamp/data/utils/text_recognition.dart';
 import 'package:receiptcamp/data/utils/utilities.dart';
 import 'package:receiptcamp/models/folder.dart';
@@ -183,24 +184,157 @@ class DatabaseService {
     return receiptsWithPrice;
   }
 
+  // method to get folders by price
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
+
+    // Step 1: Check is this folder contains no folders and receipts
+    if (await folderHasNoContents(folderId)) return <FolderWithPrice>[];
+
+    // Step 2: Retrieve direct subfolders
+    List<Folder> subFolders = await getDirectFoldersByParentId(folderId);
+
+    // Step 3: Initialize folder cost data structure
+    List<FolderWithPrice> foldersWithCost = [];
+
+    // Step 4: Calculate cost for each folder
+    for (Folder folder in subFolders) {
+      double totalCost = 0.0;
+      String? commonCurrency;
+      bool inconsistentCurrencyFound = false;
+
+      // if a direct subfolder contains receipts, return it with a 'null' price
+      if (await folderIsEmpty(folder.id)) {
+        foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
+        continue; 
+      }
+
+      // Step 5: Getting receipts in a direct subfolder by price
+      List<ReceiptWithPrice> receiptsWithPrice = await getReceiptsByPrice(folder.id, order);
+
+      // Step 6: Gettng currency symbol from receipts
+      if (receiptsWithPrice.isNotEmpty) {
+        commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
+        for (final receiptWithPrice in receiptsWithPrice) {
+          if (await TextRecognitionService.getCurrencySymbol(receiptWithPrice.priceString) != commonCurrency) {
+            inconsistentCurrencyFound = true;
+            break;
+          }
+        }
+      }
+
+      // Step 7: Checking if all receipts have the same currency.
+      // If not, add a Folder to be returned with a 'null' price
+      if (inconsistentCurrencyFound) {
+        foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
+        continue;
+      }
+
+      // Step 8: If all receipts have the same currency, add the total cost of the
+      // receipts to the running total for the folder
+      totalCost +=
+          receiptsWithPrice.fold(0, (sum, item) => sum + item.priceDouble);
+
+      // Step 9: Get the total cost of receipts in all nested subfolders 
+      double subFoldersCost = await calculateSubFoldersCost(folder.id);
+
+      // Step 10: Adding total from all subfolders to folder's running total
+      totalCost += subFoldersCost;
+      
+      // Step 11: Getting price to be displayed for a folder without rounding but keeping 2 decimal places
+      String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
+
+      // Step 12: Adding folder to be returned with display price
+      foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
+    }
+
+    if (foldersWithCost.length == 1) {
+      return foldersWithCost;
+    }
+
+    // Step 13: Sort the folders by total cost
+    foldersWithCost = FolderHelper.sortFoldersByTotalCost(foldersWithCost, order);
+
+  // Step 14: Return the immediate subfolders with their prices
+  return foldersWithCost;
+}
+
+// method to get subfolders total price from subfolders
+Future<double> calculateSubFoldersCost(String folderId) async {
     final db = await database;
-    const String column = 'name';
 
-    final List<Map<String, dynamic>> maps = await db.rawQuery(
-        'SELECT * FROM folders WHERE parentId = ? ORDER BY $column $order',
-        [folderId]);
+    // Step 9.1: Get all immediate subfolder IDs of the current folder
+    List<Map<String, dynamic>> subFolderMaps = await db.rawQuery(
+      'SELECT id FROM folders WHERE parentId = ?',
+      [folderId],
+    );
 
-    return List.generate(maps.length, (i) {
-      return FolderWithPrice(folder: Folder.fromMap(maps[i]), price: '--');
-    });
+    // Step 9.2: Extract folder IDs as Strings
+    List<String> subFolderIds =
+        subFolderMaps.map((map) => map['id'] as String).toList();
+
+    double totalCost = 0.0;
+    String? commonCurrency;
+    Set<String> currencySymbols = {'\$', '€', '¥', '£', '₹'};
+
+    // Step 9.3: Iterate over each subfolder to calculate their total cost
+    for (String subFolderId in subFolderIds) {
+
+      // skipping over empty nested folders
+      if (await folderHasNoContents(subFolderId)) continue;
+
+      // Step 9.4: Recursively calculate the cost of this subfolder
+      double subFolderCost = await calculateSubFoldersCost(subFolderId);
+
+      // Step 9.5: add single subfolder's cost to the cost of its immediate parent
+      totalCost += subFolderCost;
+
+      // Step 9.6: Calculate the cost of receipts directly within this subfolder
+      List<Map<String, dynamic>> receiptMaps = await db.rawQuery(
+        'SELECT * FROM receipts WHERE parentId = ?',
+        [subFolderId],
+      );
+
+      for (var receiptMap in receiptMaps) {
+        final Receipt receipt = Receipt.fromMap(receiptMap);
+        String priceString = await TextRecognitionService.extractPriceFromImage(
+            receipt.localPath);
+
+        // Remove currency symbols from the price string
+        for (String symbol in currencySymbols) {
+          if (priceString.contains(symbol)) {
+            priceString = priceString.replaceAll(symbol, '');
+            break; // Stop checking after the first match
+          }
+        }
+
+        final double priceDouble =
+            double.tryParse(priceString.replaceAll(RegExp(r'[^\d.]'), '')) ??
+                0.0;
+
+        // Extract and check the currency symbol
+        if (commonCurrency == null) {
+          commonCurrency =
+              await TextRecognitionService.getCurrencySymbol(priceString);
+        } else if (await TextRecognitionService.getCurrencySymbol(
+                priceString) !=
+            commonCurrency) {
+          return 0.0;
+        }
+
+        // Step 9.7: Adding price of each receipt found directly in this sub folder to the total cost
+        totalCost += priceDouble;
+      }
+    }
+
+    // Step 9.8: Returning the total cost of the subfolder
+    return totalCost;
   }
 
   Future<List<FolderWithSize>> getFoldersByTotalReceiptSize(
       String parentId, String order) async {
     final db = await database;
-    final List<FolderWithSize> foldersWithSizes = [];
+    List<FolderWithSize> foldersWithSizes = [];
 
     Future<int> getFolderSize(String folderId) async {
       int folderSize = 0;
@@ -233,13 +367,7 @@ class DatabaseService {
           .add(FolderWithSize(storageSize: storageSize, folder: folder));
     }
 
-    foldersWithSizes.sort((a, b) {
-      if (order.toUpperCase() == 'ASC') {
-        return a.storageSize.compareTo(b.storageSize);
-      } else {
-        return b.storageSize.compareTo(a.storageSize);
-      }
-    });
+    foldersWithSizes = FolderHelper.sortFoldersBySize(foldersWithSizes, order);
 
     return foldersWithSizes;
   }
@@ -284,6 +412,37 @@ class DatabaseService {
     });
 
     return [...foldersList, ...receiptsList]; // combining two lists and return
+  }
+
+  // Method to get all Folder objects for a specific folderId from the database.
+  Future<List<Folder>> getDirectFoldersByParentId(String folderId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> foldersMap = await db.rawQuery('''
+      SELECT *
+      FROM folders
+      WHERE parentId = ?
+    ''', [folderId]);
+
+    return List.generate(foldersMap.length, (i) {
+      return Folder(
+        id: foldersMap[i]['id'],
+        name: foldersMap[i]['name'],
+        lastModified: foldersMap[i]['lastModified'],
+        parentId: foldersMap[i]['parentId'],
+      );
+    });
+  }
+
+  Future<List<String>> getImmediateSubfolderIds(String folderId) async {
+    final db = await database;
+    // Execute the query to get all immediate subfolder IDs
+    List<Map<String, dynamic>> mapOfFolderIds = await db.rawQuery(
+      'SELECT id FROM folders WHERE parentId = ?',
+      [folderId],
+    );
+
+    // Map each item in the result to an element in the list
+    return mapOfFolderIds.map((item) => item['id'].toString()).toList();
   }
 
   Future<List<Receipt>> getAllReceiptsInFolder(String folderId) async {
@@ -585,6 +744,7 @@ class DatabaseService {
     }
   }
 
+  // checks if folders has no receipts only
   Future<bool> folderIsEmpty(String folderId) async {
     final db = await database;
 
@@ -617,18 +777,70 @@ class DatabaseService {
     return totalSubReceipts < 1;
   }
 
-  Future<void> deleteAllFoldersExceptRoot() async {
-  final Database db = await database;
-  
-  // delete all folders except the root folder
-  await db.delete('folders', where: 'id != ?', whereArgs: [rootFolderId]);
-  
-  // delete all receipts and tags because they reference folders that no longer exist
-  await db.delete('receipts');
-  await db.delete('tags');
+  // checks if folders has no receipts and folders only
+  Future<bool> folderHasNoContents(String folderId) async {
+    int numFolders = 0;
+    int numReceipts = 0;
+    List<String> subFolderIds = [];
 
-  FileService.deleteAllReceiptImages();
-}
+    // getting number of receipts in selected subfolder
+    numReceipts = await getReceiptCountInFolder(folderId);
+
+    // getting list of ids for all sub folders within selected folder
+    subFolderIds = await getRecursiveSubFolderIds(folderId);
+    numFolders = subFolderIds.length;
+
+    if (numFolders < 1) {
+       return numReceipts < 1;
+    }
+
+    for (final id in subFolderIds) {
+      // getting number of receipts in each subfolder
+      int subFolderReceiptCount = await getReceiptCountInFolder(id);
+      numReceipts += subFolderReceiptCount;
+    }
+
+    return numReceipts + numFolders < 1;
+  }
+
+  // getting number of receipts within selected folder (not-recursive)
+  Future<int> getReceiptCountInFolder(String folderId) async {
+    final db = await database;
+    final countReceiptsResult = await db.rawQuery('''
+    SELECT COUNT (*)
+    FROM receipts
+    WHERE parentId = ?
+    ''', [folderId]);
+
+    //adding number of receipts found directly in a folder to [totalSubReceipts]
+    int numReceipts = Sqflite.firstIntValue(countReceiptsResult) ?? 0;
+    numReceipts;
+
+    return numReceipts;
+  }
+
+  Future<void> deleteAllFoldersExceptRoot() async {
+    final Database db = await database;
+    
+    // delete all folders except the root folder
+    await db.delete('folders', where: 'id != ?', whereArgs: [rootFolderId]);
+    
+    // delete all receipts and tags because they reference folders that no longer exist
+    await db.delete('receipts');
+    await db.delete('tags');
+
+    FileService.deleteAllReceiptImages();
+  }
+
+  Future<int> updateFolder(Folder folder) async {
+    final db = await database;
+    return await db.update(
+      'folders',
+      folder.toMap(),
+      where: 'id = ?',
+      whereArgs: [folder.id],
+    );
+  }
 
   // Add Receipt operations
 

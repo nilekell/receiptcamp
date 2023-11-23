@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:receiptcamp/data/services/permissons.dart";
 import "package:receiptcamp/data/utils/receipt_helper.dart";
+import "package:receiptcamp/data/utils/utilities.dart";
 import "package:receiptcamp/logic/cubits/folder_view/folder_view_cubit.dart";
 import "package:receiptcamp/presentation/ui/ui_constants.dart";
 
@@ -72,7 +73,7 @@ abstract class SnackBarUtility {
         message = 'Uh oh, an unexpected error occured while moving those items';
         break;
       case FolderViewUpdateDateSuccess():
-        message = 'Updated date successfully';
+        message = "Updated '${state.receiptName}' date to ${Utility.formatDisplayDateFromDateTime(Utility.formatDateTimeFromUnixTimestamp(state.newTimestamp))}";
         break;
       case FolderViewUpdateDateFailure():
         message = 'Failed to update date';

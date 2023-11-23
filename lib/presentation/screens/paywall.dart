@@ -165,7 +165,7 @@ class PaywallView extends StatelessWidget {
                               )),
                           const SizedBox(height: 24),
                           const Text(
-                            'Only £4.99/month',
+                            'Only £4.99',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -193,7 +193,7 @@ class PaywallView extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           const Text(
-                            'Billed monthly. Cancel anytime.',
+                            "Pay once, access forever.",
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white70,
