@@ -19,7 +19,7 @@ class PurchasesService {
 
   bool _userIsPro = false;
   // bool get userIsPro => false, when testing to always show PayWall and payment flow
-  bool get userIsPro => false;
+  bool get userIsPro => _userIsPro;
 
   final String _revenueCatiOSApiKey = 'appl_FKvwuFnkweReYdMSvRjUCQqGZFs';
   final String _revenueCatAndroidApiKey = 'goog_iKvfzRIURBzwgXzXBRNnPkqPODo';
@@ -75,6 +75,7 @@ class PurchasesService {
   }
 
    Future<void> checkCustomerPurchaseStatus() async {
+    print('checkCustomerPurchaseStatus');
     try {
       CustomerInfo latestCustomerInfo = await Purchases.getCustomerInfo();
       _customerInfo = latestCustomerInfo;
@@ -106,6 +107,7 @@ class PurchasesService {
   }
 
   Future<bool> makeProLifetimePurchase() async {
+    print('makeProLifetimePurchase');
     try {
       CustomerInfo purchaserInfo =
           await Purchases.purchasePackage(_lifetimePackage!);
@@ -113,6 +115,7 @@ class PurchasesService {
           .entitlements.all[_receiptCampProEntitlementId];
       if (entitlement!.isActive) {
         _userIsPro = true;
+        print(_userIsPro);
         return true;
       } else {
         _userIsPro = false;
