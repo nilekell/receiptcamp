@@ -702,7 +702,7 @@ class FolderViewCubit extends Cubit<FolderViewState> {
     try {
       List<String> validatedImagePaths = [];
 
-      final scannedImagePaths = await CunningDocumentScanner.getPictures();
+      final scannedImagePaths = await CunningDocumentScanner.getPictures(true);
       if (scannedImagePaths == null || scannedImagePaths.isEmpty) {
         return;
       }
