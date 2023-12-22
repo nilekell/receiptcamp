@@ -173,6 +173,7 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: appName,
         theme: ThemeData(
+          useMaterial3: false,
           textTheme: GoogleFonts.rubikTextTheme(),
           primarySwatch: Colors.blue,
         ),
