@@ -62,8 +62,8 @@ void main() async {
       BlocProvider(
         create: (context) => FolderViewCubit(
             homeBloc: context.read<HomeBloc>(),
+            fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(
@@ -105,8 +105,8 @@ void main() async {
       BlocProvider(
         create: (context) => FolderViewCubit(
             homeBloc: context.read<HomeBloc>(),
+            fileExplorerCubit: context.read<FileExplorerCubit>(),
             prefs: PreferencesService.instance)
-          ..initFolderView(),
       ),
       BlocProvider<SharingIntentCubit>(
         create: (context) => SharingIntentCubit(
@@ -180,6 +180,7 @@ class _MyAppState extends State<MyApp> {
         debugShowCheckedModeBanner: false,
         title: appName,
         theme: ThemeData(
+          useMaterial3: false,
           textTheme: GoogleFonts.rubikTextTheme(),
           primarySwatch: Colors.blue,
         ),

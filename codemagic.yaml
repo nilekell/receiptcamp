@@ -10,7 +10,7 @@ workflows:
         PACKAGE_NAME: "com.nilekell.receiptcamp.app"
         GOOGLE_PLAY_TRACK: beta
       android_signing:
-        - RECEIPTCAMP_CODEMAGIC_KEYSTORE
+        - M3_RECEIPTCAMP_CODEMAGIC_KEYSTORE
     scripts:
       - name: Set up local.properties
         script: | 
@@ -80,18 +80,18 @@ workflows:
         # Optional boolean, defaults to false. Whether or not to submit the uploaded
         # build to TestFlight beta review. Required for distributing to beta groups.
         # Note: This action is performed during post-processing.
-        submit_to_testflight: true 
+        submit_to_testflight: false 
 
         # Optional boolean, defaults to false. Set to true to automatically expire 
         # previous build in review or waiting for review in Testflight before
         # submitting a new build to beta review. Expired builds will no longer be available for testers.
         # Note: This action is performed during post-processing.
-        expire_build_submitted_for_review: true
+        # expire_build_submitted_for_review: true
 
         # Specify the names of beta tester groups that will get access to the build 
         # once it has passed beta review.
-        beta_groups: 
-          - BetaGroup1
+        # beta_groups: 
+        #   - BetaGroup1
         
         # Configuration related to App Store (optional)
 

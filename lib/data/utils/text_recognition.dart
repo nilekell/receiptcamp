@@ -134,6 +134,27 @@ class TextRecognitionService {
     }
   }
 
+  static Future<bool> imageHasPrices(String imagePath) async {
+    try {
+      final scannedTextList =
+          await TextRecognitionService.scanImageForText(imagePath);
+
+      // Regular expression for price (e.g., $12.99, 13.50, €14, etc.)
+      final moneyExp = RegExp(r"(\d{1,3}(?:,\d{3})*\.\d{2})");
+
+      for (String text in scannedTextList) {
+        if (moneyExp.hasMatch(text)) {
+          return true; // Return true if any text element matches the price pattern
+        }
+      }
+      return false; // Return false if no prices are found
+    } on Exception catch (e) {
+      print('Error in TextRecognitionService.imageHasPrices: $e');
+      return false;
+    }
+  }
+
+
   static Future<String> extractPriceFromImage(String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
     final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
@@ -276,5 +297,18 @@ class TextRecognitionService {
     }
 
     return currencySign;
+  }
+
+  static Future<double> extractCostFromPriceString(String priceString) async {
+    // Define a pattern to remove non-numeric characters (assuming currency symbols and commas)
+    final pattern = RegExp(r'[^\d.]');
+
+    // Remove non-numeric characters from the price string
+    String numericPriceString = priceString.replaceAll(pattern, '');
+
+    // Try to parse the numeric string to a double
+    double price = double.tryParse(numericPriceString) ?? 0.0;
+
+    return price;
   }
 }
