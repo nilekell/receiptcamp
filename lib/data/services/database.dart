@@ -188,6 +188,8 @@ class DatabaseService {
   Future<List<FolderWithPrice>> getFoldersByPrice(
       String folderId, String order) async {
 
+    // print('getFoldersByPrice');
+
     // Step 1: Check is this folder contains no folders and receipts
     if (await folderHasNoContents(folderId)) return <FolderWithPrice>[];
 
@@ -203,7 +205,7 @@ class DatabaseService {
       String? commonCurrency;
       bool inconsistentCurrencyFound = false;
 
-      // if a direct subfolder contains receipts, return it with a 'null' price
+      // if a direct subfolder contains no receipts, return it with a 'null' price
       if (await folderIsEmpty(folder.id)) {
         foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
         continue; 
@@ -215,17 +217,22 @@ class DatabaseService {
       // Step 6: Gettng currency symbol from receipts
       if (receiptsWithPrice.isNotEmpty) {
         commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
-        for (final receiptWithPrice in receiptsWithPrice) {
-          if (await TextRecognitionService.getCurrencySymbol(receiptWithPrice.priceString) != commonCurrency) {
+        for (final receipt in receiptsWithPrice) {
+          String receiptCurrencySymbol = await TextRecognitionService.getCurrencySymbol(receipt.priceString);
+          // print('${receipt.name}: $receiptCurrencySymbol');
+          if (receiptCurrencySymbol != commonCurrency) {
             inconsistentCurrencyFound = true;
             break;
           }
         }
       }
 
+      // print('inconsistentCurrencyFound: $inconsistentCurrencyFound');
+
       // Step 7: Checking if all receipts have the same currency.
       // If not, add a Folder to be returned with a 'null' price
       if (inconsistentCurrencyFound) {
+        // print('adding ${folder.name} with price --');
         foldersWithCost.add(FolderWithPrice(price: '--', folder: folder));
         continue;
       }
@@ -235,100 +242,138 @@ class DatabaseService {
       totalCost +=
           receiptsWithPrice.fold(0, (sum, item) => sum + item.priceDouble);
 
-      // Step 9: Get the total cost of receipts in all nested subfolders 
+      // Step 9: Get the total cost of receipts in all nested subfolders
       double subFoldersCost = await calculateSubFoldersCost(folder.id);
+
+      // print('Subfolder: ${folder.name}, Cost: $subFoldersCost');
+
+      // Step 9.5: Do not add folder cost to running total when errors occur
+      // or folder contains receipts with different currency
+      if (subFoldersCost == -1) {
+        inconsistentCurrencyFound = true;
+      }
 
       // Step 10: Adding total from all subfolders to folder's running total
       totalCost += subFoldersCost;
       
       // Step 11: Getting price to be displayed for a folder without rounding but keeping 2 decimal places
-      String displayPrice = "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
+      String displayPrice;
+      if (inconsistentCurrencyFound) {
+        displayPrice = '--';
+      } else {
+        displayPrice =
+            "${commonCurrency ?? ''}${(totalCost * 100).truncateToDouble() / 100}";
+      }
 
       // Step 12: Adding folder to be returned with display price
+      // print('adding ${folder.name} with price $displayPrice');
       foldersWithCost.add(FolderWithPrice(price: displayPrice, folder: folder));
     }
 
-    if (foldersWithCost.length == 1) {
-      return foldersWithCost;
+    if (foldersWithCost.length != 1) {
+      // Step 13: Sort the folders by total cost
+      foldersWithCost = FolderHelper.sortFoldersByTotalCost(foldersWithCost, order);
     }
 
-    // Step 13: Sort the folders by total cost
-    foldersWithCost = FolderHelper.sortFoldersByTotalCost(foldersWithCost, order);
-
-  // Step 14: Return the immediate subfolders with their prices
-  return foldersWithCost;
+    // Step 14: Return the immediate subfolders with their prices
+    return foldersWithCost;
 }
 
 // method to get subfolders total price from subfolders
 Future<double> calculateSubFoldersCost(String folderId) async {
-    final db = await database;
+  // print('calculateSubFoldersCost');
 
-    // Step 9.1: Get all immediate subfolder IDs of the current folder
-    List<Map<String, dynamic>> subFolderMaps = await db.rawQuery(
-      'SELECT id FROM folders WHERE parentId = ?',
-      [folderId],
-    );
-
-    // Step 9.2: Extract folder IDs as Strings
-    List<String> subFolderIds =
-        subFolderMaps.map((map) => map['id'] as String).toList();
-
-    double totalCost = 0.0;
-    String? commonCurrency;
-    Set<String> currencySymbols = {'\$', '€', '¥', '£', '₹'};
-
-    // Step 9.3: Iterate over each subfolder to calculate their total cost
-    for (String subFolderId in subFolderIds) {
-
-      // skipping over empty nested folders
-      if (await folderHasNoContents(subFolderId)) continue;
-
-      // Step 9.4: Recursively calculate the cost of this subfolder
-      double subFolderCost = await calculateSubFoldersCost(subFolderId);
-
-      // Step 9.5: add single subfolder's cost to the cost of its immediate parent
-      totalCost += subFolderCost;
-
-      // Step 9.6: Calculate the cost of receipts directly within this subfolder
-      List<Map<String, dynamic>> receiptMaps = await db.rawQuery(
-        'SELECT * FROM receipts WHERE parentId = ?',
-        [subFolderId],
+    try {
+      final db = await database;
+      
+      // Step 9.1: Get all immediate subfolder IDs of the current folder
+      List<Map<String, dynamic>> subFolderMaps = await db.rawQuery(
+        'SELECT id FROM folders WHERE parentId = ?',
+        [folderId],
       );
+      
+      // Step 9.2: Extract folder IDs as Strings
+      List<String> subFolderIds =
+          subFolderMaps.map((map) => map['id'] as String).toList();
+      
+      double totalCost = 0.0;
+      String? commonCurrency;
+      Set<String> currencySymbols = {'\$', '€', '¥', '£', '₹'};
+      
+      // Step 9.3: Iterate over each subfolder to calculate their total cost
+      for (String subFolderId in subFolderIds) {
+      
+        // skipping over empty nested folders
+        if (await folderHasNoContents(subFolderId)) continue;
+      
+        // Step 9.4: Recursively calculate the cost of this subfolder
+        double subFolderCost = await calculateSubFoldersCost(subFolderId);
 
-      for (var receiptMap in receiptMaps) {
-        final Receipt receipt = Receipt.fromMap(receiptMap);
-        String priceString = await TextRecognitionService.extractPriceFromImage(
-            receipt.localPath);
+        // print('Folder: $subFolderId, Subfolder Cost: $subFolderCost');
 
-        // Remove currency symbols from the price string
-        for (String symbol in currencySymbols) {
-          if (priceString.contains(symbol)) {
-            priceString = priceString.replaceAll(symbol, '');
-            break; // Stop checking after the first match
+        if (subFolderCost == -1) {
+          // print('subFolder has inconsistent currencies');
+          return -1;
+        }
+      
+        // Step 9.5: add single subfolder's cost to the cost of its immediate parent
+        // print('total cost before adding subfolder cost: $totalCost');
+        totalCost += subFolderCost;
+        // print('total cost after adding subfolder cost: $totalCost');
+      
+        // Step 9.6: Calculate the cost of receipts directly within this subfolder
+        List<Map<String, dynamic>> receiptMaps = await db.rawQuery(
+          'SELECT * FROM receipts WHERE parentId = ?',
+          [subFolderId],
+        );
+      
+        for (var receiptMap in receiptMaps) {
+          final Receipt receipt = Receipt.fromMap(receiptMap);
+          String priceString =
+              await TextRecognitionService.extractPriceFromImage(
+                  receipt.localPath);
+
+          String processedPriceString = priceString;
+
+          // Remove currency symbols from the price string
+          for (String symbol in currencySymbols) {
+            if (processedPriceString.contains(symbol)) {
+              processedPriceString =
+                  processedPriceString.replaceAll(symbol, '');
+              break; // Stop checking after the first match
+            }
           }
+
+          final double priceDouble = double.tryParse(
+                  processedPriceString.replaceAll(RegExp(r'[^\d.]'), '')) ??
+              0.0;
+
+          // print('Processing receipt: ${receipt.name}, Price String: $priceString, Parsed Price: $priceDouble');
+      
+          // Extract the currency symbol once and use it for comparison
+          String currentCurrencySymbol = await TextRecognitionService.getCurrencySymbol(priceString);
+
+          // print('Receipt: ${receipt.name}, Currency Symbol: $currentCurrencySymbol, Common Currency: $commonCurrency');
+          
+          if (commonCurrency == null) {
+            commonCurrency = currentCurrencySymbol;
+          } else if (currentCurrencySymbol != commonCurrency) {
+            // print('${receipt.name} has an inconsistent currency symbol');
+            return -1;
+          }
+
+          // Step 9.7: Adding price of each receipt found directly in this sub folder to the total cost
+          totalCost += priceDouble;
         }
-
-        final double priceDouble =
-            double.tryParse(priceString.replaceAll(RegExp(r'[^\d.]'), '')) ??
-                0.0;
-
-        // Extract and check the currency symbol
-        if (commonCurrency == null) {
-          commonCurrency =
-              await TextRecognitionService.getCurrencySymbol(priceString);
-        } else if (await TextRecognitionService.getCurrencySymbol(
-                priceString) !=
-            commonCurrency) {
-          return 0.0;
-        }
-
-        // Step 9.7: Adding price of each receipt found directly in this sub folder to the total cost
-        totalCost += priceDouble;
       }
-    }
+      
+      // Step 9.8: Returning the total cost of the subfolder
+      return totalCost;
 
-    // Step 9.8: Returning the total cost of the subfolder
-    return totalCost;
+    } on Exception catch (e) {
+      print(e.toString());
+      return -1;
+    }
   }
 
   Future<List<FolderWithSize>> getFoldersByTotalReceiptSize(
