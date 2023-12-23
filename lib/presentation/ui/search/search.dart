@@ -52,7 +52,7 @@ class CustomSearchDelegate extends SearchDelegate {
           // resetting query to empty string
           query = '';
         },
-        icon: const Icon(Icons.clear),
+        icon: const Icon(Icons.clear, color: Colors.white,),
       ),
     ];
   }
@@ -63,6 +63,7 @@ class CustomSearchDelegate extends SearchDelegate {
     return IconButton(
       icon: AnimatedIcon(
         icon: AnimatedIcons.menu_arrow,
+        color: Colors.white,
         progress: transitionAnimation,
       ),
       onPressed: () {
