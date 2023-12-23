@@ -215,8 +215,10 @@ class DatabaseService {
       // Step 6: Gettng currency symbol from receipts
       if (receiptsWithPrice.isNotEmpty) {
         commonCurrency = await TextRecognitionService.getCurrencySymbol(receiptsWithPrice[0].priceString);
-        for (final receiptWithPrice in receiptsWithPrice) {
-          if (await TextRecognitionService.getCurrencySymbol(receiptWithPrice.priceString) != commonCurrency) {
+        for (final receipt in receiptsWithPrice) {
+          String receiptCurrencySymbol = await TextRecognitionService.getCurrencySymbol(receipt.priceString);
+          // print(receiptCurrencySymbol);
+          if (receiptCurrencySymbol != commonCurrency) {
             inconsistentCurrencyFound = true;
             break;
           }
