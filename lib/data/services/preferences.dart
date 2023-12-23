@@ -13,6 +13,7 @@ class PreferencesService {
     // setting default values for the first time app is ever opened
     if (_prefs!.containsKey('lastOrder') == false) await saveString('lastOrder', 'ASC');
     if (_prefs!.containsKey('lastColumn') == false) await saveString('lastColumn', 'name');
+    if (_prefs!.containsKey('isFirstAppOpen') == false) await saveBool('IsFirstAppOpen', true);
   }
 
   String getLastOrder() {
@@ -28,6 +29,14 @@ class PreferencesService {
 
   Future<void> setLastColumn(String column) async {
     await _prefs?.setString('lastColumn', column);
+  }
+
+  bool getIsFirstAppOpen() {
+    return _prefs?.getBool('IsFirstAppOpen') ?? true;
+  }
+
+  Future<void> setIsFirstAppOpen(bool value) async {
+    await _prefs?.setBool('IsFirstAppOpen', value);
   }
 
   // Asynchronous methods to save various types of values
