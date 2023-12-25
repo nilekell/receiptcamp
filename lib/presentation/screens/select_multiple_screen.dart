@@ -322,7 +322,7 @@ class _SelectMultipleViewState extends State<SelectMultipleView>
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
                         child: const Text(
-                            'Uh oh, an unexpected error occured. Please go back and/or report the error', textAlign: TextAlign.center, textScaleFactor: 1.2,),
+                            'Uh oh, an unexpected error occured. Please go back and/or report the error', textAlign: TextAlign.center, textScaler: TextScaler.linear(1.2),),
                       ),
                     ),
                     ElevatedButton(
