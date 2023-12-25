@@ -127,6 +127,10 @@ flutter:
     - assets/bottom_gradient.png
     - assets/top_gradient.png
 
+    - assets/onboarding_home.png
+    - assets/onboarding_upload.png
+    - assets/onboarding_search.png
+    - assets/onboarding_options.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
