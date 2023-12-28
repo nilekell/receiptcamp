@@ -40,12 +40,20 @@ class _OnboardingViewState extends State<OnboardingView> {
       child: IntroductionScreen(
         key: _introKey,
         pages: _listPagesViewModel,
-        showNextButton: false,
+        showNextButton: true,
+        next: const Text("Next", style: TextStyle(fontWeight: FontWeight.w700)),
         done: const Text("Done", style: TextStyle(fontWeight: FontWeight.w700)),
         onDone: () {
           context.read<OnboardingCubit>().closeScreen();
           // show paywall
-          // do nothing if the user is not pro
+          context.handleUserStatus(() {
+            // do nothing if the user is pro
+          });
+        },
+        showSkipButton: true,
+        skip: const Text("Skip", style: TextStyle(fontWeight: FontWeight.w700)),
+        onSkip: () {
+          context.read<OnboardingCubit>().closeScreen();
           context.handleUserStatus(() {});
         },
         dotsDecorator: DotsDecorator(
