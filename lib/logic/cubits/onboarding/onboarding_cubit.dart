@@ -12,7 +12,7 @@ class OnboardingCubit extends Cubit<OnboardingState> {
   init() {
     if (_prefs.getIsFirstAppOpen() == true) {
       emit(OnboardingShowScreen());
-      // _prefs.setIsFirstAppOpen(false);
+      _prefs.setIsFirstAppOpen(false);
     } else {
       return;
     }
